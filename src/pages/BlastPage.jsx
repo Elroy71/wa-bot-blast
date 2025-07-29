@@ -1,12 +1,16 @@
 import React from 'react';
-import { PlusCircle } from 'lucide-react';
-import { recentBlasts } from '../data/mockData';
+import { PlusCircle, Eye, Trash2 } from 'lucide-react';
 
-const BlastPage = () => (
+// 1. Komponen sekarang menerima props dari App.jsx
+const BlastPage = ({ blasts, navigateTo, handleDeleteBlast }) => (
     <div>
         <div className="flex justify-between items-center mb-6">
             <h2 className="text-3xl font-bold text-gray-800">Daftar Blast</h2>
-            <button className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition-colors">
+            {/* 2. Tombol ini sekarang berfungsi untuk navigasi */}
+            <button 
+                onClick={() => navigateTo('createBlast')}
+                className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition-colors"
+            >
                 <PlusCircle size={20} className="mr-2" />
                 Buat Blast Baru
             </button>
@@ -26,7 +30,8 @@ const BlastPage = () => (
                         </tr>
                     </thead>
                     <tbody>
-                        {recentBlasts.map(blast => (
+                        {/* 3. Mapping data dari props 'blasts', bukan dari mockData lagi */}
+                        {blasts.map(blast => (
                             <tr key={blast.id} className="bg-white border-b hover:bg-gray-50">
                                 <td className="px-6 py-4 font-medium text-gray-900">{blast.name}</td>
                                 <td className="px-6 py-4">{blast.group}</td>
@@ -44,8 +49,22 @@ const BlastPage = () => (
                                     <span className="text-green-600">{blast.sent}</span> / <span className="text-red-600">{blast.failed}</span>
                                 </td>
                                 <td className="px-6 py-4">{blast.date}</td>
-                                <td className="px-6 py-4">
-                                    <button className="text-indigo-600 hover:text-indigo-900">Detail</button>
+                                {/* 4. Tombol Aksi (Detail & Hapus) sekarang berfungsi */}
+                                <td className="px-6 py-4 flex items-center space-x-4">
+                                    <button 
+                                        onClick={() => navigateTo('blastDetail', { blastId: blast.id })} 
+                                        className="flex items-center text-indigo-600 hover:text-indigo-900 font-medium"
+                                    >
+                                        <Eye size={16} className="mr-1"/>
+                                        Detail
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDeleteBlast(blast.id)}
+                                        className="flex items-center text-red-600 hover:text-red-900 font-medium"
+                                    >
+                                        <Trash2 size={16} className="mr-1"/>
+                                        Hapus
+                                    </button>
                                 </td>
                             </tr>
                         ))}
