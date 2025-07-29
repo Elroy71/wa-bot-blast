@@ -1,17 +1,28 @@
 import React, { useState } from 'react';
 import { Home, Send, Users, Group, MessageSquareText, Bell, User, Settings, LogOut, MessageSquareText as AppIcon } from 'lucide-react';
 
-// Impor semua komponen halaman yang akan kita gunakan
+// --- DATA & PAGES IMPORT ---
+import { 
+    contactGroups as initialGroupsData, 
+    allContacts as initialContactsData,
+    recentBlasts as initialBlastsData 
+} from './data/mockData';
+
+import DashboardPage from './pages/DashboardPage';
+import GroupsPage from './pages/GroupsPage';
+import CreateGroupPage from './pages/CreateGroupPage';
+import EditGroupPage from './pages/EditGroupPage';
 import { SenderPage } from './pages/SenderPage';
 import { AiAgentsListPage } from './pages/AiAgentsListPage';
 import { AiAgentEditorPage } from './pages/AiAgentEditorPage';
-import DashboardPage from './pages/DashboardPage';
 import ContactsPage from './pages/ContactsPage';
-import GroupsPage from './pages/GroupsPage';
 import BlastPage from './pages/BlastPage';
+import CreateBlastPage from './pages/CreateBlastPage';
+import BlastDetailPage from './pages/BlastDetailPage'; // <-- 1. Import diaktifkan
 import PagePlaceholder from './components/common/PagePlaceholder';
 
-// Komponen Header dan Sidebar bisa tetap di sini atau dipindahkan ke /components/layout/
+
+// --- STATIC COMPONENTS ---
 const Header = () => (
     <header className="bg-white shadow-sm p-4 flex justify-between items-center z-20">
         <h1 className="text-xl font-bold text-gray-800">Selamat Datang!</h1>
@@ -30,24 +41,25 @@ const Sidebar = ({ activePage, navigateTo }) => {
         { id: 'groups', label: 'Daftar Grup', icon: Group },
         { id: 'blasts', label: 'Blast', icon: MessageSquareText },
     ];
-    
-    // [TAMBAHAN] Menu bagian bawah diaktifkan kembali
     const bottomMenuItems = [
         { id: 'notifications', label: 'Notifikasi', icon: Bell },
         { id: 'settings', label: 'Setting Profile', icon: Settings },
         { id: 'logout', label: 'Logout', icon: LogOut },
     ];
-
+    
     const NavLink = ({ item }) => {
-        // [PERBAIKAN] Logika untuk menentukan menu aktif
         const senderPages = ['sender', 'aiAgentsList', 'aiAgentEditor'];
-        const isActive = item.id === 'sender' 
-            ? senderPages.includes(activePage) 
-            : activePage === item.id;
+        const groupPages = ['groups', 'createGroup', 'editGroup'];
+        const blastPages = ['blasts', 'createBlast', 'blastDetail']; // <-- Tambahkan halaman blast
+        
+        let isActive = activePage === item.id;
+        if (item.id === 'sender' && senderPages.includes(activePage)) isActive = true;
+        if (item.id === 'groups' && groupPages.includes(activePage)) isActive = true;
+        if (item.id === 'blasts' && blastPages.includes(activePage)) isActive = true; // <-- Logika untuk menu blast aktif
 
         return (
             <a href="#" onClick={(e) => { e.preventDefault(); navigateTo(item.id); }}
-                className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${isActive ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-indigo-800'}`}>
+               className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${isActive ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-indigo-800'}`}>
                 <item.icon className="w-5 h-5 mr-4" />
                 <span>{item.label}</span>
             </a>
@@ -71,45 +83,119 @@ const Sidebar = ({ activePage, navigateTo }) => {
     );
 };
 
-export default function App() {
-  const [currentView, setCurrentView] = useState({ page: 'dashboard', params: {} });
 
+// --- MAIN APP COMPONENT ---
+export default function App() {
+  // State untuk navigasi
+  const [currentView, setCurrentView] = useState({ page: 'blasts', params: {} });
+  
+  // State untuk data aplikasi
+  const [groups, setGroups] = useState(initialGroupsData);
+  const [contacts, setContacts] = useState(initialContactsData);
+  const [blasts, setBlasts] = useState(initialBlastsData); // <-- State untuk data Blast
+
+  // Fungsi navigasi
   const navigateTo = (page, params = {}) => {
     setCurrentView({ page, params });
   };
 
+  // --- CRUD Handlers ---
+
+  // Group Handlers
+  const handleAddGroup = (newGroupData) => {
+    const newGroup = { ...newGroupData, id: `group-${Date.now()}` };
+    setGroups(prev => [newGroup, ...prev]);
+  };
+  const handleDeleteGroup = (groupIdToDelete) => {
+    if (window.confirm("Apakah Anda yakin ingin menghapus grup ini?")) {
+        setGroups(prev => prev.filter(group => group.id !== groupIdToDelete));
+    }
+  };
+  const handleUpdateGroup = (groupIdToUpdate, updatedData) => {
+    setGroups(prev => prev.map(g => g.id === groupIdToUpdate ? { ...g, ...updatedData } : g));
+  };
+  
+  // Contact Handlers
+  const handleAddContact = (newContactData) => {
+    const newContact = { ...newContactData, id: `contact-${Date.now()}` };
+    setContacts(prev => [...prev, newContact]);
+    return newContact;
+  };
+ 
+const handleAddBlast = (newBlastData) => {
+    const group = groups.find(g => g.id === newBlastData.groupId);
+    if (!group) return; // Guard clause if group not found
+
+    const newBlast = {
+        ...newBlastData,
+        id: `blast-${Date.now()}`,
+        status: 'Selesai', // Kita set 'Selesai' agar ada data dummy
+        date: new Date().toISOString().split('T')[0].replace(/-/g, '/'),
+        group: group.name,
+        recipients: group.members.map(phone => {
+            const contact = contacts.find(c => c.phone === phone);
+            // Membuat data dummy untuk status dan tanggal
+            const statuses = ['Dibaca', 'Terkirim', 'Gagal'];
+            const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+            return {
+                name: contact ? contact.name : phone,
+                phone: phone,
+                status: randomStatus,
+                sentAt: randomStatus !== 'Gagal' ? new Date().toLocaleString('id-ID') : null,
+            };
+        }),
+    };
+    // Menghitung jumlah sukses dan gagal dari data dummy
+    newBlast.sent = newBlast.recipients.filter(r => r.status === 'Dibaca' || r.status === 'Terkirim').length;
+    newBlast.failed = newBlast.recipients.filter(r => r.status === 'Gagal').length;
+
+    setBlasts(prev => [newBlast, ...prev]);
+  };
+
+  const handleDeleteBlast = (blastIdToDelete) => {
+    if (window.confirm("Apakah Anda yakin ingin menghapus riwayat blast ini?")) {
+        setBlasts(prev => prev.filter(blast => blast.id !== blastIdToDelete));
+    }
+  };
+
   const renderPage = () => {
     switch (currentView.page) {
-      case 'dashboard':
-        return <DashboardPage navigateTo={navigateTo} />;
-      case 'sender':
-        return <SenderPage navigateTo={navigateTo} />;
-      case 'contacts':
-        return <ContactsPage navigateTo={navigateTo} />;
+      case 'dashboard': return <DashboardPage navigateTo={navigateTo} />;
+      case 'sender': return <SenderPage navigateTo={navigateTo} />;
+      case 'contacts': return <ContactsPage navigateTo={navigateTo} />;
+      
+      case 'blasts': 
+        return <BlastPage navigateTo={navigateTo} blasts={blasts} handleDeleteBlast={handleDeleteBlast} />;
+      case 'createBlast':
+        return <CreateBlastPage navigateTo={navigateTo} handleAddBlast={handleAddBlast} groups={groups} />;
+      
+      // --- 2. Rute Detail diaktifkan ---
+      case 'blastDetail':
+        return <BlastDetailPage 
+                    navigateTo={navigateTo}
+                    blasts={blasts}
+                    params={currentView.params}
+                />;
+
       case 'groups':
-        return <GroupsPage navigateTo={navigateTo} />;
-      case 'blasts':
-        return <BlastPage navigateTo={navigateTo} />;
+        return <GroupsPage navigateTo={navigateTo} groups={groups} handleDeleteGroup={handleDeleteGroup} />;
+      case 'createGroup':
+        return <CreateGroupPage navigateTo={navigateTo} handleAddGroup={handleAddGroup} contacts={contacts} handleAddContact={handleAddContact} />;
+      case 'editGroup':
+        return <EditGroupPage navigateTo={navigateTo} params={currentView.params} groups={groups} contacts={contacts} handleUpdateGroup={handleUpdateGroup} handleAddContact={handleAddContact} />;
       
-      // Halaman baru untuk alur AI Agent
-      case 'aiAgentsList':
-        return <AiAgentsListPage navigateTo={navigateTo} />;
-      case 'aiAgentEditor':
-        return <AiAgentEditorPage navigateTo={navigateTo} params={currentView.params} />;
-      
-      // [TAMBAHAN] Halaman placeholder diaktifkan kembali
-      case 'notifications':
-        return <PagePlaceholder pageName="Notifikasi" />;
-      case 'settings':
-        return <PagePlaceholder pageName="Setting Profile" />;
-      case 'logout':
-        return <PagePlaceholder pageName="Logout" />;
+      case 'aiAgentsList': return <AiAgentsListPage navigateTo={navigateTo} />;
+      case 'aiAgentEditor': return <AiAgentEditorPage navigateTo={navigateTo} params={currentView.params} />;
+      case 'notifications': return <PagePlaceholder pageName="Notifikasi" />;
+      case 'settings': return <PagePlaceholder pageName="Setting Profile" />;
+      case 'logout': return <PagePlaceholder pageName="Logout" />;
       
       default:
         return <DashboardPage navigateTo={navigateTo} />;
     }
   };
 
+  // --- JSX RENDER ---
   return (
     <div className="flex h-screen bg-gray-100 font-sans">
       <Sidebar activePage={currentView.page} navigateTo={navigateTo} />
