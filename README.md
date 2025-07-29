@@ -55,24 +55,29 @@ Sebelum menjalankan proyek, pastikan Anda telah menginstal:
 
 ## ⚙️ Instalasi & Menjalankan Proyek
 
-### 1. Clone Repositori
+1. **Clone Repositori**
 
 ```bash
 git clone https://github.com/Elroy71/wa-bot-blast.git
+```
 
-
-### 2. Masuk ke Direktori Proyek
+2. **Masuk ke Direktori Proyek**
 ```bash
 cd wa-bot-blast
+```
 
-### 3. Instal Dependensi
+3. **Instal Dependensi**
 ```bash
 npm install
+```
 
-### 4. Jalankan Aplikasi
+4. **Jalankan Aplikasi**
 ```bash
 npm run dev
+```
 
-### 5. Akses di Browser
-```Buka browser dan akses:
+5. **Akses di Browser**
+```bash
+Buka browser dan akses:
 http://localhost:3000
+```
