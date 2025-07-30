@@ -1,9 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { UserPlus, FileUp, Link as LinkIcon, Edit, Trash2, Search } from 'lucide-react';
-// Impor library xlsx
 import * as XLSX from 'xlsx';
 
-// Data dummy awal untuk demonstrasi paginasi
 const initialContacts = [
     { id: 1, name: 'Andi Nugroho', phone: '081234567890', email: 'andi.n@example.com', gender: 'Pria' },
     { id: 2, name: 'Siti Aminah', phone: '082345678901', email: 'siti.a@example.com', gender: 'Wanita' },
@@ -12,21 +10,19 @@ const initialContacts = [
     { id: 5, name: 'Eko Prasetyo', phone: '085678901234', email: 'eko.p@example.com', gender: 'Pria' },
     { id: 6, name: 'Fitriani', phone: '086789012345', email: 'fitri@example.com', gender: 'Wanita' },
     { id: 7, name: 'Gilang Ramadhan', phone: '087890123456', email: 'gilang.r@example.com', gender: 'Pria' },
-    { id: 8, name: 'Gilang Ramadhan', phone: '087890123456', email: 'gilang.r@example.com', gender: 'Pria' },
-    { id: 9, name: 'Gilang Ramadhan', phone: '087890123456', email: 'gilang.r@example.com', gender: 'Pria' },
-    { id: 10, name: 'Gilang Ramadhan', phone: '087890123456', email: 'gilang.r@example.com', gender: 'Pria' },
-    { id: 11, name: 'Gilang Ramadhan', phone: '087890123456', email: 'gilang.r@example.com', gender: 'Pria' },
-    { id: 12, name: 'Gilang Ramadhan', phone: '087890123456', email: 'gilang.r@example.com', gender: 'Pria' },
-    { id: 13, name: 'Gilang Ramadhan', phone: '087890123456', email: 'gilang.r@example.com', gender: 'Pria' },
-    { id: 14, name: 'Gilang Ramadhan', phone: '087890123456', email: 'gilang.r@example.com', gender: 'Pria' },
-    { id: 15, name: 'Gilang Ramadhan', phone: '087890123456', email: 'gilang.r@example.com', gender: 'Pria' },
+    { id: 8, name: 'Hana Yulita', phone: '088901234567', email: 'hana.y@example.com', gender: 'Wanita' },
+    { id: 9, name: 'Irfan Hakim', phone: '089012345678', email: 'irfan.h@example.com', gender: 'Pria' },
+    { id: 10, name: 'Jasmine Putri', phone: '081122334455', email: 'jasmine.p@example.com', gender: 'Wanita' },
+    { id: 11, name: 'Kurniawan', phone: '082233445566', email: 'kurniawan@example.com', gender: 'Pria' },
+    { id: 12, name: 'Lia Amelia', phone: '083344556677', email: 'lia.a@example.com', gender: 'Wanita' },
+    { id: 13, name: 'Morgan Oey', phone: '084455667788', email: 'morgan.o@example.com', gender: 'Pria' },
+    { id: 14, name: 'Nadia Zuhra', phone: '085566778899', email: 'nadia.z@example.com', gender: 'Wanita' },
+    { id: 15, name: 'Omar Daniel', phone: '086677889900', email: 'omar.d@example.com', gender: 'Pria' },
 ];
 
-// Konfigurasi Paginasi
 const ITEMS_PER_PAGE = 10;
 
 const ContactsPage = () => {
-    // === STATE MANAGEMENT ===
     const [contacts, setContacts] = useState(initialContacts);
     const [isManualModalOpen, setManualModalOpen] = useState(false);
     const [isExcelModalOpen, setExcelModalOpen] = useState(false);
@@ -34,22 +30,18 @@ const ContactsPage = () => {
     const [formData, setFormData] = useState({ name: '', phone: '', email: '', gender: 'Pria' });
     const [editingContactId, setEditingContactId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    
-    // State baru untuk paginasi dan file excel
     const [currentPage, setCurrentPage] = useState(1);
     const [excelFile, setExcelFile] = useState(null);
 
+    const filteredContacts = useMemo(() => {
+        if (!searchTerm) return contacts;
+        const term = searchTerm.toLowerCase();
+        return contacts.filter(contact =>
+            contact.name.toLowerCase().includes(term) ||
+            contact.phone.toLowerCase().includes(term)
+        );
+    }, [contacts, searchTerm]);
 
-    // === LOGIKA INTI ===
-
-    // Logika untuk memfilter kontak berdasarkan searchTerm
-    const filteredContacts = useMemo(() => 
-        contacts.filter(contact =>
-            contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            contact.phone.includes(searchTerm)
-        ), [contacts, searchTerm]);
-
-    // Logika untuk Paginasi
     const totalPages = Math.ceil(filteredContacts.length / ITEMS_PER_PAGE);
     const paginatedContacts = useMemo(() => {
         const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -57,12 +49,10 @@ const ContactsPage = () => {
         return filteredContacts.slice(startIndex, endIndex);
     }, [filteredContacts, currentPage]);
 
-
-    // === HANDLERS ===
-    
-    // Handler untuk navigasi halaman paginasi
     const goToPage = (page) => {
-        setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+        if (page > 0 && page <= totalPages) {
+            setCurrentPage(page);
+        }
     };
 
     const handleAddClick = () => {
@@ -76,14 +66,14 @@ const ContactsPage = () => {
         setFormData({ ...contact });
         setManualModalOpen(true);
     };
-    
+
     const closeModal = () => {
         setManualModalOpen(false);
         setExcelModalOpen(false);
         setGSheetModalOpen(false);
         setEditingContactId(null);
         setFormData({ name: '', phone: '', email: '', gender: 'Pria' });
-        setExcelFile(null); // Reset file saat modal ditutup
+        setExcelFile(null);
     };
 
     const handleInputChange = (e) => {
@@ -99,7 +89,7 @@ const ContactsPage = () => {
         }
 
         if (editingContactId) {
-            setContacts(contacts.map(contact => 
+            setContacts(contacts.map(contact =>
                 contact.id === editingContactId ? { ...formData, id: editingContactId } : contact
             ));
         } else {
@@ -116,13 +106,11 @@ const ContactsPage = () => {
             setContacts(contacts.filter(contact => contact.id !== id));
         }
     };
-    
-    // Handler untuk memilih file excel
+
     const handleFileChange = (e) => {
         setExcelFile(e.target.files[0]);
     };
 
-    // Handler untuk Implementasi Import Excel Sebenarnya
     const handleImportExcel = () => {
         if (!excelFile) {
             alert('Silakan pilih file Excel terlebih dahulu.');
@@ -136,16 +124,11 @@ const ContactsPage = () => {
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
-                // Menggunakan header eksplisit untuk memastikan urutan kolom
                 const json = XLSX.utils.sheet_to_json(worksheet, { header: ['name', 'phone', 'email', 'gender'] });
-                
-                // Hapus baris header jika ada (biasanya baris pertama)
                 const jsonData = json.slice(1);
 
-                // Validasi dan format data baru
                 let lastId = contacts[contacts.length - 1]?.id || 0;
                 const newContacts = jsonData.map((contact, index) => {
-                    // Pastikan nomor telepon ada dan berupa string/number
                     if (!contact.phone || contact.phone.toString().trim() === '') {
                         throw new Error(`Kontak di baris ${index + 2} tidak memiliki nomor telepon.`);
                     }
@@ -156,7 +139,7 @@ const ContactsPage = () => {
                         email: contact.email || '',
                         gender: ['Pria', 'Wanita'].includes(contact.gender) ? contact.gender : 'Pria',
                     };
-                }).filter(Boolean); // Filter null/undefined jika ada error
+                }).filter(Boolean);
 
                 setContacts(prev => [...prev, ...newContacts]);
                 alert(`${newContacts.length} kontak berhasil diimpor!`);
@@ -176,28 +159,29 @@ const ContactsPage = () => {
 
     const handleImportGSheet = () => { alert('Sinkronisasi dengan Google Sheet berhasil! (Simulasi)'); closeModal(); };
 
-
     return (
         <div>
             {/* --- Bagian Header --- */}
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-3xl font-bold text-gray-800">Daftar Kontak</h2>
-                <div className="flex space-x-2">
-                    <button onClick={handleAddClick} className="flex items-center bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg shadow-sm hover:bg-gray-50 transition-colors">
+            {/* [MODIFIKASI] Kelas diubah untuk responsivitas. Dari 'flex' menjadi 'flex flex-col md:flex-row' dst. */}
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+                <h2 className="text-3xl font-bold text-gray-800 w-full md:w-auto">Daftar Kontak</h2>
+                {/* [MODIFIKASI] Grup tombol juga dibuat responsif */}
+                <div className="flex flex-col md:flex-row w-full md:w-auto space-y-2 md:space-y-0 md:space-x-2">
+                    <button onClick={handleAddClick} className="flex justify-center items-center bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg shadow-sm hover:bg-gray-50 transition-colors w-full md:w-auto">
                         <UserPlus size={20} className="mr-2" />
                         Tambah Manual
                     </button>
-                    <button onClick={() => setExcelModalOpen(true)} className="flex items-center bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700 transition-colors">
+                    <button onClick={() => setExcelModalOpen(true)} className="flex justify-center items-center bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700 transition-colors w-full md:w-auto">
                         <FileUp size={20} className="mr-2" />
                         Import Excel
                     </button>
-                    <button onClick={() => setGSheetModalOpen(true)} className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition-colors">
+                    <button onClick={() => setGSheetModalOpen(true)} className="flex justify-center items-center bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition-colors w-full md:w-auto">
                         <LinkIcon size={20} className="mr-2" />
                         Import G-Sheet
                     </button>
                 </div>
             </div>
-            
+
             {/* --- Bar Pencarian --- */}
             <div className="mb-4">
                 <div className="relative">
@@ -210,7 +194,7 @@ const ContactsPage = () => {
                         value={searchTerm}
                         onChange={(e) => {
                             setSearchTerm(e.target.value);
-                            goToPage(1); // Kembali ke halaman 1 setiap kali melakukan pencarian baru
+                            goToPage(1);
                         }}
                         className="w-full pl-10 pr-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
@@ -233,9 +217,8 @@ const ContactsPage = () => {
                     <tbody>
                         {paginatedContacts.map((contact, index) => (
                             <tr key={contact.id} className="bg-white border-b hover:bg-gray-50">
-                                {/* Nomor urut disesuaikan dengan halaman saat ini */}
                                 <td className="px-6 py-4 font-medium text-gray-900">{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</td>
-                                <td className="px-6 py-4 font-medium text-gray-900">{contact.name}</td>
+                                <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{contact.name}</td>
                                 <td className="px-6 py-4">{contact.phone}</td>
                                 <td className="px-6 py-4">{contact.email}</td>
                                 <td className="px-6 py-4">{contact.gender}</td>
@@ -254,7 +237,8 @@ const ContactsPage = () => {
             </div>
 
             {/* --- Kontrol Paginasi --- */}
-            <div className="flex justify-between items-center mt-4">
+            {/* [MODIFIKASI] Dibuat responsif agar tidak bertabrakan di layar kecil */}
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-4">
                 <span className="text-sm text-gray-700">
                     Menampilkan <span className="font-semibold">{paginatedContacts.length}</span> dari <span className="font-semibold">{filteredContacts.length}</span> Kontak
                 </span>
@@ -279,14 +263,15 @@ const ContactsPage = () => {
                 </div>
             </div>
 
-            {/* --- Modal Tambah / Edit Kontak --- */}
+            {/* --- Modals --- */}
             {isManualModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
                     <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
                         <h3 className="text-xl font-semibold mb-4">
                             {editingContactId ? 'Edit Kontak' : 'Tambah Kontak Manual'}
                         </h3>
                         <form onSubmit={handleSaveContact}>
+                            {/* Form fields ... */}
                             <div className="mb-4">
                                 <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">Nama</label>
                                 <input type="text" name="name" id="name" value={formData.name} onChange={handleInputChange} className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
@@ -314,15 +299,14 @@ const ContactsPage = () => {
                     </div>
                 </div>
             )}
-            
-            {/* Modal Import Excel dengan handler file */}
-            {isExcelModalOpen && ( 
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+
+            {isExcelModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
                     <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
                         <h3 className="text-xl font-semibold mb-4">Import Kontak dari Excel</h3>
                         <div className="mb-4">
                             <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="excel-file">Upload File Excel</label>
-                            <input onChange={handleFileChange} type="file" id="excel-file" accept=".xlsx, .xls" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                            <input onChange={handleFileChange} type="file" id="excel-file" accept=".xlsx, .xls" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
                         </div>
                         <div className="p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 rounded-md">
                             <p className="font-bold">Format Kolom Excel (Tanpa Header):</p>
@@ -338,12 +322,11 @@ const ContactsPage = () => {
                             <button type="button" onClick={handleImportExcel} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Upload</button>
                         </div>
                     </div>
-                </div> 
+                </div>
             )}
-            
-            {/* Modal G-Sheet (tidak berubah) */}
-            {isGSheetModalOpen && ( 
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+
+            {isGSheetModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
                     <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
                         <h3 className="text-xl font-semibold mb-4">Import Kontak dari Google Sheet</h3>
                         <div className="mb-6">
@@ -355,7 +338,7 @@ const ContactsPage = () => {
                             <button type="button" onClick={handleImportGSheet} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Import</button>
                         </div>
                     </div>
-                </div> 
+                </div>
             )}
         </div>
     );
