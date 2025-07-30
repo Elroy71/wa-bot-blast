@@ -48,14 +48,6 @@ export const contacts = [
     { id: 4, name: 'Dewi Anggraini', phone: '+6282155667788', group: 'UKM Basket', added: 'Manual' },
 ];
 
-// export const contactGroups = [
-//     { id: 1, name: 'UKM Basket', members: 152, description: 'Grup untuk anggota Unit Kegiatan Mahasiswa Basket.' },
-//     { id: 2, name: 'UKM Bola', members: 90, description: 'Grup untuk anggota Unit Kegiatan Mahasiswa Sepak Bola.' },
-//     { id: 3, name: 'Tim Internal', members: 15, description: 'Kontak internal perusahaan.' },
-//     { id: 4, name: 'Pelanggan VIP', members: 50, description: 'Pelanggan dengan prioritas tinggi.' },
-// ];
-
-
 export const allContacts = [
     { id: 1, name: 'Andi Budi', number: '6281234567890' },
     { id: 2, name: 'Citra Dewi', number: '6281234567891' },
@@ -79,29 +71,58 @@ export const allContacts = [
  * Properti 'members' sekarang berisi array dari ID kontak,
  * bukan lagi hanya angka.
  */
+// Saya hanya akan menampilkan bagian contactGroups yang diperbaiki.
+// Sisa dari file Anda bisa tetap sama.
+
 export const contactGroups = [
     {
         id: 'group-1',
         name: 'UKM Basket',
         description: 'Grup untuk koordinasi anggota UKM Basket.',
-        members: [1, 3, 5, 7, 9, 11, 13, 15], // Array of contact IDs
+        members: ['contact-1', 'contact-3', 'contact-5', 'contact-7', 'contact-9'],
     },
     {
         id: 'group-2',
         name: 'UKM Bola',
         description: 'Grup untuk semua informasi seputar UKM Bola.',
-        members: [2, 4, 6, 8, 10, 12, 14], // Array of contact IDs
+        members: ['contact-2', 'contact-4', 'contact-6', 'contact-8', 'contact-10'],
     },
     {
         id: 'group-3',
         name: 'Panitia Acara 17an',
         description: 'Koordinasi panitia untuk acara kemerdekaan.',
-        members: [1, 2, 3, 4, 5, 6], // Array of contact IDs
+        members: ['contact-1', 'contact-2', 'contact-3', 'contact-4', 'contact-5', 'contact-6'],
     },
     {
         id: 'group-4',
         name: 'Keluarga Besar',
         description: 'Grup keluarga untuk silaturahmi.',
-        members: [1, 2, 10, 11, 14], // Array of contact IDs
+        members: ['contact-1', 'contact-2', 'contact-10', 'contact-11', 'contact-14'],
+    },
+    {
+        id: 'group-5',
+        name: 'Keluarga Besar PMK',
+        description: 'Grup persekutuan mahasiswa Kristen.',
+        members: ['contact-1', 'contact-5', 'contact-11', 'contact-12'],
+    },
+    {
+        id: 'group-6',
+        name: 'Keluarga Besar KMK',
+        description: 'Grup keluarga mahasiswa Katolik.',
+        members: ['contact-2', 'contact-6', 'contact-13', 'contact-14'],
+    },
+    {
+        id: 'group-7',
+        name: 'Tim Proyek "Andromeda"',
+        description: 'Grup khusus untuk pengembangan proyek internal.',
+        members: ['contact-3', 'contact-4', 'contact-7', 'contact-8'],
+    },
+    {
+        id: 'group-8',
+        name: 'Alumni Angkatan 2020',
+        description: 'Wadah komunikasi untuk alumni.',
+        members: ['contact-9', 'contact-10', 'contact-15'],
     },
 ];
+
+// ... (sisa data di file mockData.jsx Anda)
