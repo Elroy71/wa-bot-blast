@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { PlusCircle, Search, BrainCircuit } from 'lucide-react';
 import { mockData } from '../data/mockData';
 
-// Komponen Modal Tambah
+// Komponen Modal Tambah (Tidak ada perubahan)
 const AddSenderModal = ({ isOpen, onClose, onSave, newSender, setNewSender }) => {
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md mx-4">
                 <h3 className="text-xl font-bold mb-4">Tambah Sender Baru</h3>
                 <form onSubmit={(e) => { e.preventDefault(); onSave(); }}>
                     <div className="mb-4"><label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Nama Sender</label><input type="text" id="name" value={newSender.name} onChange={(e) => setNewSender({ ...newSender, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Contoh: CS Marketing" required /></div>
@@ -19,13 +19,13 @@ const AddSenderModal = ({ isOpen, onClose, onSave, newSender, setNewSender }) =>
     );
 };
 
-// Komponen Modal Edit
+// Komponen Modal Edit (Tidak ada perubahan)
 const EditSenderModal = ({ isOpen, onClose, onSave, senderToEdit, setSenderToEdit }) => {
     if (!isOpen) return null;
     const handleNameChange = (e) => setSenderToEdit({ ...senderToEdit, name: e.target.value });
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md mx-4">
                 <h3 className="text-xl font-bold mb-4">Edit Nama Sender</h3>
                 <p className="text-sm text-gray-500 mb-4">Anda hanya dapat mengubah nama. Nomor telepon tidak dapat diubah.</p>
                 <form onSubmit={(e) => { e.preventDefault(); onSave(); }}>
@@ -38,12 +38,12 @@ const EditSenderModal = ({ isOpen, onClose, onSave, senderToEdit, setSenderToEdi
     );
 };
 
-// Komponen Modal QR Code
+// Komponen Modal QR Code (Tidak ada perubahan)
 const QrCodeModal = ({ isOpen, onClose, onConfirm, sender }) => {
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm text-center">
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm text-center mx-4">
                 <h3 className="text-xl font-bold mb-2">Scan QR Code</h3>
                 <p className="text-sm text-gray-600 mb-4">Scan dengan aplikasi WhatsApp di ponsel Anda untuk menghubungkan nomor <span className="font-bold">{sender?.phone}</span>.</p>
                 <div className="flex justify-center items-center bg-gray-100 p-4 rounded-lg mb-4"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${sender?.phone}`} alt="QR Code" className="w-48 h-48"/></div>
@@ -61,8 +61,17 @@ export const SenderPage = ({ navigateTo }) => {
     const [isQrModalOpen, setIsQrModalOpen] = useState(false);
     const [newSender, setNewSender] = useState({ name: '', phone: '' });
     const [currentSender, setCurrentSender] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
 
-    // Handlers Tambah
+    const filteredSenders = useMemo(() => {
+        if (!searchTerm) return senders;
+        return senders.filter(sender =>
+            sender.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            sender.phone.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [searchTerm, senders]);
+
+    // Handlers Tambah (Tidak ada perubahan)
     const openAddModal = () => setIsAddModalOpen(true);
     const closeAddModal = () => { setIsAddModalOpen(false); setNewSender({ name: '', phone: '' }); };
     const handleAddSender = () => {
@@ -72,7 +81,7 @@ export const SenderPage = ({ navigateTo }) => {
         closeAddModal();
     };
 
-    // Handlers Edit
+    // Handlers Edit (Tidak ada perubahan)
     const openEditModal = (sender) => { setCurrentSender(sender); setIsEditModalOpen(true); };
     const closeEditModal = () => { setIsEditModalOpen(false); setCurrentSender(null); };
     const handleUpdateSender = () => {
@@ -81,7 +90,7 @@ export const SenderPage = ({ navigateTo }) => {
         closeEditModal();
     };
 
-    // Handlers Aksi
+    // Handlers Aksi (Tidak ada perubahan)
     const handleDeleteSender = (senderId) => {
         if (window.confirm("Apakah Anda yakin ingin menghapus sender ini? Aksi ini tidak dapat dibatalkan.")) {
             setSenders(prev => prev.filter(s => s.id !== senderId));
@@ -103,21 +112,42 @@ export const SenderPage = ({ navigateTo }) => {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
                 <h2 className="text-3xl font-bold text-gray-800">Daftar Sender</h2>
                 <div className="flex items-center space-x-3">
-                    <div className="relative"><input type="text" placeholder="Cari..." className="bg-white border border-gray-300 rounded-md py-2 pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500" /><Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} /></div>
-                    <button onClick={() => navigateTo('aiAgentsList')} className="flex items-center bg-yellow-400 text-gray-800 font-semibold px-4 py-2 rounded-md shadow hover:bg-yellow-500 transition-colors"><BrainCircuit size={20} className="mr-2" />AI Agent</button>
-                    <button onClick={openAddModal} className="flex items-center bg-blue-500 text-white font-semibold px-4 py-2 rounded-md shadow hover:bg-blue-600 transition-colors"><PlusCircle size={20} className="mr-2" />Tambah Sender</button>
+                    <button onClick={() => navigateTo('aiAgentsList')} className="flex items-center bg-yellow-400 text-gray-800 font-semibold px-4 py-2 rounded-md shadow hover:bg-yellow-500 transition-colors">
+                        <BrainCircuit size={20} className="mr-2" />
+                        <span>AI Agent</span>
+                    </button>
+                    <button onClick={openAddModal} className="flex items-center bg-blue-500 text-white font-semibold px-4 py-2 rounded-md shadow hover:bg-blue-600 transition-colors">
+                        <PlusCircle size={20} className="mr-2" />
+                        <span>Tambah Sender</span>
+                    </button>
                 </div>
             </div>
+
+            <div className="mb-6">
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <Search size={20} className="text-gray-400" />
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="Cari berdasarkan nama atau nomor telepon..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+            </div>
+            
             <div className="bg-white p-6 rounded-xl shadow-md overflow-x-auto">
                 <table className="w-full text-sm text-left text-gray-500">
                     <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                         <tr><th className="px-6 py-3">No</th><th className="px-6 py-3">Nama</th><th className="px-6 py-3">Nomor Telepon</th><th className="px-6 py-3">Status</th><th className="px-6 py-3">Aksi</th></tr>
                     </thead>
                     <tbody>
-                        {senders.map((sender, index) => (
+                        {filteredSenders.map((sender, index) => (
                             <tr key={sender.id} className="bg-white border-b hover:bg-gray-50">
                                 <td className="px-6 py-4">{index + 1}</td>
                                 <td className="px-6 py-4 font-medium text-gray-900">{sender.name}</td>
@@ -132,7 +162,8 @@ export const SenderPage = ({ navigateTo }) => {
                                         ) : (
                                             <button onClick={() => handleGenerateQr(sender)} className="px-3 py-1 text-xs font-medium text-white bg-purple-500 rounded-md hover:bg-purple-600">Generate QR</button>
                                         )}
-                                        <button onClick={() => navigateTo('aiAgentEditor', { senderId: sender.id })} className="px-3 py-1 text-xs font-medium text-gray-800 bg-gray-200 rounded-md hover:bg-gray-300">AI Agent</button>
+                                        {/* PERBARUAN: Mengarah ke halaman aiAgentEdit dengan membawa ID sender */}
+                                        <button onClick={() => navigateTo('aiAgentEdit', { senderId: sender.id })} className="px-3 py-1 text-xs font-medium text-gray-800 bg-gray-200 rounded-md hover:bg-gray-300">AI Agent</button>
                                     </div>
                                 </td>
                             </tr>
@@ -140,11 +171,14 @@ export const SenderPage = ({ navigateTo }) => {
                     </tbody>
                 </table>
             </div>
+            
             <AddSenderModal isOpen={isAddModalOpen} onClose={closeAddModal} onSave={handleAddSender} newSender={newSender} setNewSender={setNewSender} />
             <EditSenderModal isOpen={isEditModalOpen} onClose={closeEditModal} onSave={handleUpdateSender} senderToEdit={currentSender} setSenderToEdit={setCurrentSender} />
             <QrCodeModal isOpen={isQrModalOpen} onClose={closeQrModal} onConfirm={handleConfirmScan} sender={currentSender} />
+
+
+            
         </div>
     );
 };
-
 export default SenderPage;
