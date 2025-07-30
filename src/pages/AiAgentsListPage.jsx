@@ -2,20 +2,17 @@ import React from 'react';
 import { PlusCircle, BrainCircuit, ArrowLeft } from 'lucide-react';
 import { mockData } from '../data/mockData';
 
-// Halaman untuk menampilkan daftar AI Agent dalam bentuk kartu
 export const AiAgentsListPage = ({ navigateTo }) => (
     <div>
-        {/* [TAMBAHAN] Tombol Kembali */}
-        <div className="flex-shrink-0 mb-6">
-            <button onClick={() => navigateTo('sender')} className="flex items-center text-sm font-medium text-gray-600 hover:text-gray-900">
-                <ArrowLeft size={16} className="mr-2" />
-                Kembali ke Daftar Sender
-            </button>
-        </div>
-
         <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-bold text-gray-800">AI Agent</h2>
-            <button onClick={() => navigateTo('aiAgentEditor', { isCreating: true })} className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition-colors">
+            <div className="flex items-center">
+                <button onClick={() => navigateTo('sender')} className="p-2 rounded-full hover:bg-gray-200 mr-4">
+                    <ArrowLeft size={24} className="text-gray-700" />
+                </button>
+                <h2 className="text-3xl font-bold text-gray-800">AI Agent</h2>
+            </div>
+            {/* PERBARUAN: Mengarah ke halaman aiAgentCreate */}
+            <button onClick={() => navigateTo('aiAgentCreate')} className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition-colors">
                 <PlusCircle size={20} className="mr-2" />
                 Tambah AI Agent
             </button>
@@ -30,7 +27,8 @@ export const AiAgentsListPage = ({ navigateTo }) => (
                     <h4 className="text-lg font-bold text-gray-800 mt-4">{agent.name}</h4>
                     <p className="text-sm text-gray-500 mt-1">Perusahaan: {agent.company}</p>
                     <div className="mt-4 pt-4 border-t border-gray-200">
-                        <button onClick={() => navigateTo('aiAgentEditor', { aiAgentId: agent.id })} className="text-sm font-medium text-indigo-600 hover:text-indigo-800">
+                        {/* PERBARUAN: Mengarah ke halaman aiAgentEdit dengan membawa ID agent */}
+                        <button onClick={() => navigateTo('aiAgentEdit', { aiAgentId: agent.id })} className="text-sm font-medium text-indigo-600 hover:text-indigo-800">
                             Kelola Agent
                         </button>
                     </div>

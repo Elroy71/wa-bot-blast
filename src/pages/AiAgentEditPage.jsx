@@ -3,36 +3,36 @@ import { ArrowLeft, Video, Image as ImageIcon, Paperclip } from 'lucide-react';
 import { mockData } from '../data/mockData';
 import Switch from '../components/common/Switch';
 
-export const AiAgentEditorPage = ({ navigateTo, params }) => {
-    const isCreating = params.isCreating;
-    
+export const AiAgentEditPage = ({ navigateTo, params }) => {
+    // Logika untuk menemukan data yang benar berdasarkan parameter
     const sender = mockData.senders.find(s => s.id === params.senderId);
-    const agent = isCreating 
-        ? { name: 'Agent Baru', company: '', behavior: '', status: 'Nonaktif', disableOnManualReply: true, canReadMessages: true, knowledgeBases: [] }
-        : mockData.aiAgents.find(a => a.id === (sender?.aiAgentId || params.aiAgentId)) || { name: 'Agent Tidak Ditemukan', knowledgeBases: [] };
-
+    const agent = mockData.aiAgents.find(a => a.id === (sender?.aiAgentId || params.aiAgentId)) 
+                  || { name: 'Agent Tidak Ditemukan', company: '', behavior: '', status: 'Nonaktif', disableOnManualReply: true, canReadMessages: true, knowledgeBases: [] };
+    
+    // State untuk form
     const [activeTab, setActiveTab] = useState('behavior');
     const [botName, setBotName] = useState(agent.name);
     const [isAiActive, setIsAiActive] = useState(agent.status === 'Aktif');
     const [disableOnManual, setDisableOnManual] = useState(agent.disableOnManualReply);
     const [aiCanRead, setAiCanRead] = useState(agent.canReadMessages);
-    
-    // [PERBAIKAN] Tombol kembali sekarang selalu mengarah ke halaman daftar AI Agent
-    const backDestination = 'aiAgentsList';
 
     return (
         <div className="flex flex-col h-full">
-            <div className="flex-shrink-0 mb-6">
-                <button onClick={() => navigateTo(backDestination)} className="flex items-center text-sm font-medium text-gray-600 hover:text-gray-900">
-                    <ArrowLeft size={16} className="mr-2" />
-                    {/* [PERBAIKAN] Teks tombol disederhanakan */}
-                    Kembali ke Daftar AI Agent
+            {/* Header Halaman */}
+            <div className="flex items-center mb-6">
+                <button onClick={() => navigateTo('aiAgentsList')} className="p-2 rounded-full hover:bg-gray-200 mr-4">
+                    <ArrowLeft size={24} className="text-gray-700" />
                 </button>
+                <h2 className="text-3xl font-bold text-gray-800 truncate">
+                    Edit AI Agent: <span className="text-indigo-600">{agent.name}</span>
+                </h2>
             </div>
+            
             <div className="flex-1 lg:flex gap-6">
-                {/* Konten Editor (tidak berubah) */}
+                {/* Kolom Editor Utama */}
                 <div className="w-full lg:w-2/3 bg-white rounded-xl shadow-md p-6 flex flex-col mb-6 lg:mb-0">
-                    <div className="border-b border-gray-200 mb-6">
+                    {/* Navigasi Tab di Tengah */}
+                    <div className="flex justify-center border-b border-gray-200 mb-6">
                         <nav className="-mb-px flex space-x-8">
                             <button onClick={() => setActiveTab('behavior')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'behavior' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
                                 Bot Behavior
@@ -42,7 +42,8 @@ export const AiAgentEditorPage = ({ navigateTo, params }) => {
                             </button>
                         </nav>
                     </div>
-                    <div className="flex-1 overflow-y-auto">
+
+                    <div className="flex-1 overflow-y-auto pr-2">
                         {activeTab === 'behavior' && (
                             <form className="space-y-6">
                                 <div><label className="block text-sm font-medium text-gray-700">Nama Bot</label><input type="text" value={botName} onChange={e => setBotName(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" /></div>
@@ -54,7 +55,7 @@ export const AiAgentEditorPage = ({ navigateTo, params }) => {
                             </form>
                         )}
                         {activeTab === 'knowledge' && (
-                            <div className="space-y-4">
+                             <div className="space-y-4">
                                 {agent.knowledgeBases.map(kb => (
                                     <div key={kb.id} className="border border-gray-200 rounded-lg p-4">
                                         <input type="text" defaultValue={kb.title} placeholder="Judul Knowledge" className="text-md font-bold w-full border-0 p-0 focus:ring-0" />
@@ -70,11 +71,14 @@ export const AiAgentEditorPage = ({ navigateTo, params }) => {
                             </div>
                         )}
                     </div>
+                    
                     <div className="mt-6 flex-shrink-0 flex justify-end gap-3">
-                        <button className="bg-white py-2 px-4 border border-gray-300 rounded-md">Batal</button>
+                        <button onClick={() => navigateTo('aiAgentsList')} className="bg-white py-2 px-4 border border-gray-300 rounded-md">Batal</button>
                         <button className="bg-indigo-600 text-white py-2 px-4 rounded-md">Simpan Perubahan</button>
                     </div>
                 </div>
+
+                {/* Kolom Kanan Info Sender */}
                 <div className="w-full lg:w-1/3">
                     <div className="bg-white rounded-xl shadow-md p-6">
                         <h4 className="font-bold text-gray-800 mb-4">Sender Terhubung</h4>
@@ -87,7 +91,7 @@ export const AiAgentEditorPage = ({ navigateTo, params }) => {
                                     <span className={`mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${sender.status === 'Aktif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{sender.status}</span>
                                 </div>
                             </div>
-                        ) : (<p className="text-gray-500">Agent ini belum terhubung ke sender manapun.</p>)}
+                        ) : (<p className="text-gray-500 text-sm">Agent ini belum terhubung ke sender manapun.</p>)}
                     </div>
                 </div>
             </div>
@@ -95,4 +99,4 @@ export const AiAgentEditorPage = ({ navigateTo, params }) => {
     );
 };
 
-export default AiAgentEditorPage;
+export default AiAgentEditPage;
