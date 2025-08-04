@@ -8,6 +8,7 @@ import {
     recentBlasts as initialBlastsData 
 } from './data/mockData';
 
+
 import DashboardPage from './pages/DashboardPage';
 import GroupsPage from './pages/GroupsPage';
 import CreateGroupPage from './pages/CreateGroupPage';
@@ -120,103 +121,134 @@ const Sidebar = ({
 
 // --- MAIN APP COMPONENT ---
 export default function App() {
-  const [currentView, setCurrentView] = useState({ page: 'dashboard', params: {} });
-  const [isDesktopExpanded, setIsDesktopExpanded] = useState(true);
-  const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [groups, setGroups] = useState(initialGroupsData);
-  const [contacts, setContacts] = useState(initialContactsData);
-  const [blasts, setBlasts] = useState(initialBlastsData);
+    const [currentView, setCurrentView] = useState({ page: 'dashboard', params: {} });
+    const [isDesktopExpanded, setIsDesktopExpanded] = useState(true);
+    const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  const navigateTo = (page, params = {}) => {
-    setCurrentView({ page, params });
-  };
-  const toggleDesktopSidebar = () => {
-      setIsDesktopExpanded(prev => !prev);
-  };
+    // --- State untuk data grup, kontak, dan blast ---
+    const [groups, setGroups] = useState(initialGroupsData);
+    const [contacts, setContacts] = useState(initialContactsData);
+    const [blasts, setBlasts] = useState(initialBlastsData);
 
-  // --- CRUD Handlers (Tidak ada perubahan) ---
-  const handleAddGroup = (newGroupData) => {
-    const newGroup = { ...newGroupData, id: `group-${Date.now()}` };
-    setGroups(prev => [newGroup, ...prev]);
-  };
-  const handleDeleteGroup = (groupIdToDelete) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus grup ini?")) {
-        setGroups(prev => prev.filter(group => group.id !== groupIdToDelete));
-    }
-  };
-  const handleUpdateGroup = (groupIdToUpdate, updatedData) => {
-    setGroups(prev => prev.map(g => g.id === groupIdToUpdate ? { ...g, ...updatedData } : g));
-  };
-  const handleAddContact = (newContactData) => {
-    const newContact = { ...newContactData, id: `contact-${Date.now()}` };
-    setContacts(prev => [...prev, newContact]);
-    return newContact;
-  };
-  const handleAddBlast = (newBlastData) => {
-    const group = groups.find(g => g.id === newBlastData.groupId);
-    if (!group) return;
-    const newBlast = {
-        ...newBlastData, id: `blast-${Date.now()}`, status: 'Selesai', date: new Date().toISOString().split('T')[0].replace(/-/g, '/'), group: group.name,
-        recipients: group.members.map(phone => {
-            const contact = contacts.find(c => c.phone === phone);
-            const statuses = ['Dibaca', 'Terkirim', 'Gagal'];
-            const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
-            return { name: contact ? contact.name : phone, phone: phone, status: randomStatus, sentAt: randomStatus !== 'Gagal' ? new Date().toLocaleString('id-ID') : null, };
-        }),
+    const navigateTo = (page, params = {}) => {
+        setCurrentView({ page, params });
     };
-    newBlast.sent = newBlast.recipients.filter(r => r.status === 'Dibaca' || r.status === 'Terkirim').length;
-    newBlast.failed = newBlast.recipients.filter(r => r.status === 'Gagal').length;
-    setBlasts(prev => [newBlast, ...prev]);
-  };
-  const handleDeleteBlast = (blastIdToDelete) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus riwayat blast ini?")) {
-        setBlasts(prev => prev.filter(blast => blast.id !== blastIdToDelete));
-    }
-  };
+    const toggleDesktopSidebar = () => {
+        setIsDesktopExpanded(prev => !prev);
+    };
 
-  const renderPage = () => {
-    switch (currentView.page) {
-      case 'dashboard': return <DashboardPage navigateTo={navigateTo} />;
-      case 'sender': return <SenderPage navigateTo={navigateTo} />;
-      case 'contacts': return <ContactsPage navigateTo={navigateTo} />;
-      case 'blasts': return <BlastPage navigateTo={navigateTo} blasts={blasts} handleDeleteBlast={handleDeleteBlast} />;
-      case 'createBlast': return <CreateBlastPage navigateTo={navigateTo} handleAddBlast={handleAddBlast} groups={groups} />;
-      case 'blastDetail': return <BlastDetailPage navigateTo={navigateTo} blasts={blasts} params={currentView.params} />;
-      case 'groups': return <GroupsPage navigateTo={navigateTo} groups={groups} handleDeleteGroup={handleDeleteGroup} />;
-      case 'createGroup': return <CreateGroupPage navigateTo={navigateTo} handleAddGroup={handleAddGroup} contacts={contacts} handleAddContact={handleAddContact} />;
-      case 'editGroup': return <EditGroupPage navigateTo={navigateTo} params={currentView.params} groups={groups} contacts={contacts} handleUpdateGroup={handleUpdateGroup} handleAddContact={handleAddContact} />;
-      
-      // PERBARUAN: Rute untuk AI Agent
-      case 'aiAgentsList': return <AiAgentsListPage navigateTo={navigateTo} />;
-      case 'aiAgentCreate': return <AiAgentCreatePage navigateTo={navigateTo} params={currentView.params} />;
-      case 'aiAgentEdit': return <AiAgentEditPage navigateTo={navigateTo} params={currentView.params} />;
-      
-      case 'notifications': return <PagePlaceholder pageName="Notifikasi" />;
-      case 'settings': return <PagePlaceholder pageName="Setting Profile" />;
-      case 'logout': return <PagePlaceholder pageName="Logout" />;
-      default: return <DashboardPage navigateTo={navigateTo} />;
-    }
-  };
+    // --- CRUD Handlers (Tidak ada perubahan) ---
+    const handleAddGroup = (newGroupData) => {
+        const newGroup = { ...newGroupData, id: `group-${Date.now()}` };
+        setGroups(prev => [newGroup, ...prev]);
+    };
+    const handleDeleteGroup = (groupIdToDelete) => {
+        if (window.confirm("Apakah Anda yakin ingin menghapus grup ini?")) {
+            setGroups(prev => prev.filter(group => group.id !== groupIdToDelete));
+        }
+    };
+    const handleUpdateGroup = (groupIdToUpdate, updatedData) => {
+        setGroups(prev => prev.map(g => g.id === groupIdToUpdate ? { ...g, ...updatedData } : g));
+    };
+    const handleAddBlast = (newBlastData) => {
+        const group = groups.find(g => g.id === newBlastData.groupId);
+        if (!group) return;
+        const newBlast = {
+            ...newBlastData, id: `blast-${Date.now()}`, status: 'Selesai', date: new Date().toISOString().split('T')[0].replace(/-/g, '/'), group: group.name,
+            recipients: group.members.map(phone => {
+                const contact = contacts.find(c => c.phone === phone);
+                const statuses = ['Dibaca', 'Terkirim', 'Gagal'];
+                const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+                return { name: contact ? contact.name : phone, phone: phone, status: randomStatus, sentAt: randomStatus !== 'Gagal' ? new Date().toLocaleString('id-ID') : null, };
+            }),
+        };
+        newBlast.sent = newBlast.recipients.filter(r => r.status === 'Dibaca' || r.status === 'Terkirim').length;
+        newBlast.failed = newBlast.recipients.filter(r => r.status === 'Gagal').length;
+        setBlasts(prev => [newBlast, ...prev]);
+    };
+    const handleDeleteBlast = (blastIdToDelete) => {
+        if (window.confirm("Apakah Anda yakin ingin menghapus riwayat blast ini?")) {
+            setBlasts(prev => prev.filter(blast => blast.id !== blastIdToDelete));
+        }
+    };
+    // [PERUBAHAN] Handlers untuk Kontak sekarang ada di sini
+    const handleAddContact = (newContactData) => {
+        const newContact = { ...newContactData, id: `contact-${Date.now()}` };
+        setContacts(prev => [newContact, ...prev]);
+        return newContact; // Mengembalikan kontak baru jika diperlukan
+    };
 
-  return (
-    <div className="flex h-screen bg-gray-100 font-sans">
-        {isMobileSidebarOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden" onClick={() => setMobileSidebarOpen(false)}></div>
-        )}
-        <Sidebar 
-            activePage={currentView.page} 
-            navigateTo={navigateTo} 
-            isDesktopExpanded={isDesktopExpanded}
-            toggleDesktopSidebar={toggleDesktopSidebar}
-            isMobileOpen={isMobileSidebarOpen}
-            setMobileOpen={setMobileSidebarOpen}
-        />
-        <div className="flex-1 flex flex-col overflow-hidden">
-            <Header onMenuClick={() => setMobileSidebarOpen(true)} />
-            <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6 md:p-8" onClick={() => { if(isMobileSidebarOpen) setMobileSidebarOpen(false) }}>
-                {renderPage()}
-            </main>
+    const handleUpdateContact = (contactId, updatedData) => {
+        setContacts(prev => prev.map(c => c.id === contactId ? { ...updatedData, id: contactId } : c));
+    };
+
+    const handleDeleteContact = (contactId) => {
+        if (window.confirm("Apakah Anda yakin ingin menghapus kontak ini?")) {
+            setContacts(prev => prev.filter(c => c.id !== contactId));
+        }
+    };
+    
+    const handleImportContacts = (importedContacts) => {
+        let lastId = contacts[contacts.length - 1]?.id || 0;
+        const newContacts = importedContacts.map(contact => ({
+            ...contact,
+            id: ++lastId,
+        }));
+        setContacts(prev => [...prev, ...newContacts]);
+        alert(`${newContacts.length} kontak berhasil diimpor!`);
+    };
+
+
+    const renderPage = () => {
+        switch (currentView.page) {
+        case 'dashboard': return <DashboardPage navigateTo={navigateTo} />;
+        case 'sender': return <SenderPage navigateTo={navigateTo} />;
+         // [PERUBAHAN] Passing state dan handlers ke ContactsPage
+        case 'contacts': return <ContactsPage
+            contacts={contacts}
+            onAddContact={handleAddContact}
+            onUpdateContact={handleUpdateContact}
+            onDeleteContact={handleDeleteContact}
+            onImportContacts={handleImportContacts}
+        />;
+        case 'blasts': return <BlastPage navigateTo={navigateTo} blasts={blasts} handleDeleteBlast={handleDeleteBlast} />;
+        case 'createBlast': return <CreateBlastPage navigateTo={navigateTo} handleAddBlast={handleAddBlast} groups={groups} />;
+        case 'blastDetail': return <BlastDetailPage navigateTo={navigateTo} blasts={blasts} params={currentView.params} />;
+        case 'groups': return <GroupsPage navigateTo={navigateTo} groups={groups} handleDeleteGroup={handleDeleteGroup} />;
+        case 'createGroup': return <CreateGroupPage navigateTo={navigateTo} handleAddGroup={handleAddGroup} contacts={contacts} handleAddContact={handleAddContact} />;
+        case 'editGroup': return <EditGroupPage navigateTo={navigateTo} params={currentView.params} groups={groups} contacts={contacts} handleUpdateGroup={handleUpdateGroup} handleAddContact={handleAddContact} />;
+        
+        // PERBARUAN: Rute untuk AI Agent
+        case 'aiAgentsList': return <AiAgentsListPage navigateTo={navigateTo} />;
+        case 'aiAgentCreate': return <AiAgentCreatePage navigateTo={navigateTo} params={currentView.params} />;
+        case 'aiAgentEdit': return <AiAgentEditPage navigateTo={navigateTo} params={currentView.params} />;
+        
+        case 'notifications': return <PagePlaceholder pageName="Notifikasi" />;
+        case 'settings': return <PagePlaceholder pageName="Setting Profile" />;
+        case 'logout': return <PagePlaceholder pageName="Logout" />;
+        default: return <DashboardPage navigateTo={navigateTo} />;
+        }
+    };
+
+    return (
+        <div className="flex h-screen bg-gray-100 font-sans">
+            {isMobileSidebarOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden" onClick={() => setMobileSidebarOpen(false)}></div>
+            )}
+            <Sidebar 
+                activePage={currentView.page} 
+                navigateTo={navigateTo} 
+                isDesktopExpanded={isDesktopExpanded}
+                toggleDesktopSidebar={toggleDesktopSidebar}
+                isMobileOpen={isMobileSidebarOpen}
+                setMobileOpen={setMobileSidebarOpen}
+            />
+            <div className="flex-1 flex flex-col overflow-hidden">
+                <Header onMenuClick={() => setMobileSidebarOpen(true)} />
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6 md:p-8" onClick={() => { if(isMobileSidebarOpen) setMobileSidebarOpen(false) }}>
+                    {renderPage()}
+                </main>
+            </div>
         </div>
-    </div>
-  );
+    );
 }

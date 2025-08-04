@@ -48,22 +48,23 @@ export const contacts = [
     { id: 4, name: 'Dewi Anggraini', phone: '+6282155667788', group: 'UKM Basket', added: 'Manual' },
 ];
 
+// Data Kontak Awal (15 data)
 export const allContacts = [
-    { id: 1, name: 'Andi Budi', number: '6281234567890' },
-    { id: 2, name: 'Citra Dewi', number: '6281234567891' },
-    { id: 3, name: 'Eka Fitri', number: '6281234567892' },
-    { id: 4, name: 'Gita Hapsari', number: '6281234567893' },
-    { id: 5, name: 'Indra Jaya', number: '6281234567894' },
-    { id: 6, name: 'Kartika Lestari', number: '6281234567895' },
-    { id: 7, name: 'Mega Ningsih', number: '6281234567896' },
-    { id: 8, name: 'Oscar Permana', number: '6281234567897' },
-    { id: 9, name: 'Putri Qonita', number: '6281234567898' },
-    { id: 10, name: 'Rian Santoso', number: '6281234567899' },
-    { id: 11, name: 'Sari Utami', number: '6281234567800' },
-    { id: 12, name: 'Tono Wibowo', number: '6281234567801' },
-    { id: 13, name: 'Vina Yuliana', number: '6281234567802' },
-    { id: 14, name: 'Wahyu Zulkarnain', number: '6281234567803' },
-    { id: 15, name: 'Zahra Amelia', number: '6281234567804' },
+    { id: 1, name: 'Andi Nugroho', phone: '081234567890', email: 'andi.n@example.com', gender: 'Pria' },
+    { id: 2, name: 'Siti Aminah', phone: '082345678901', email: 'siti.a@example.com', gender: 'Wanita' },
+    { id: 3, name: 'Budi Santoso', phone: '083456789012', email: 'budi.s@example.com', gender: 'Pria' },
+    { id: 4, name: 'Dewi Lestari', phone: '084567890123', email: 'dewi.l@example.com', gender: 'Wanita' },
+    { id: 5, name: 'Eko Prasetyo', phone: '085678901234', email: 'eko.p@example.com', gender: 'Pria' },
+    { id: 6, name: 'Fitriani', phone: '086789012345', email: 'fitri@example.com', gender: 'Wanita' },
+    { id: 7, name: 'Gilang Ramadhan', phone: '087890123456', email: 'gilang.r@example.com', gender: 'Pria' },
+    { id: 8, name: 'Hana Yulita', phone: '088901234567', email: 'hana.y@example.com', gender: 'Wanita' },
+    { id: 9, name: 'Irfan Hakim', phone: '089012345678', email: 'irfan.h@example.com', gender: 'Pria' },
+    { id: 10, name: 'Jasmine Putri', phone: '081122334455', email: 'jasmine.p@example.com', gender: 'Wanita' },
+    { id: 11, name: 'Kurniawan', phone: '082233445566', email: 'kurniawan@example.com', gender: 'Pria' },
+    { id: 12, name: 'Lia Amelia', phone: '083344556677', email: 'lia.a@example.com', gender: 'Wanita' },
+    { id: 13, name: 'Morgan Oey', phone: '084455667788', email: 'morgan.o@example.com', gender: 'Pria' },
+    { id: 14, name: 'Nadia Zuhra', phone: '085566778899', email: 'nadia.z@example.com', gender: 'Wanita' },
+    { id: 15, name: 'Omar Daniel', phone: '086677889900', email: 'omar.d@example.com', gender: 'Pria' },
 ];
 
 /**
