@@ -18,13 +18,13 @@ export const recentBlasts = [
 // Struktur data diperbarui untuk mendukung fitur baru
 export const mockData = {
     // Daftar sender, beberapa sudah terhubung dengan aiAgentId, beberapa belum (null)
-    sendersData: [
+    senders: [
         { id: 'sender-1', name: 'Sales WhatsApp', phone: '+6281234567890', status: 'Aktif', aiAgentId: 'agent-1' },
         { id: 'sender-2', name: 'Support Center', phone: '+6281234567891', status: 'Aktif', aiAgentId: 'agent-2' },
         { id: 'sender-3', name: 'Info Promo', phone: '+6281234567892', status: 'Nonaktif', aiAgentId: null },
         { id: 'sender-4', name: 'Akun Bisnis Utama', phone: '+6281234567893', status: 'Aktif', aiAgentId: null },
     ],
-    aiAgentsData: [
+    aiAgents: [
         { 
         id: 'agent-1', 
         name: 'Bot Customer Service', 

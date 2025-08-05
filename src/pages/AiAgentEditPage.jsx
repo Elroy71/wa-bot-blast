@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import AiAgentForm from '../components/AiAgentForm';
+import { mockData } from '../data/mockData'; // Untuk fallback jika localStorage kosong
 
 export const AiAgentEditPage = ({ navigateTo, params }) => {
     const [agent, setAgent] = useState(null);
 
-    // Memuat data agent yang spesifik dari localStorage
     useEffect(() => {
-        const storedAgents = JSON.parse(localStorage.getItem('blastbot_agents')) || [];
+        let storedAgents = JSON.parse(localStorage.getItem('blastbot_agents'));
+        if (!storedAgents) {
+            storedAgents = mockData.aiAgents;
+            localStorage.setItem('blastbot_agents', JSON.stringify(storedAgents));
+        }
         const agentToEdit = storedAgents.find(a => a.id === params.aiAgentId);
         if (agentToEdit) {
             setAgent(agentToEdit);
@@ -15,7 +19,6 @@ export const AiAgentEditPage = ({ navigateTo, params }) => {
     }, [params.aiAgentId]);
     
     const handleUpdateAgent = (updatedAgentData) => {
-        // Baca semua agent, perbarui yang satu ini, lalu simpan kembali
         const storedAgents = JSON.parse(localStorage.getItem('blastbot_agents')) || [];
         const newAgents = storedAgents.map(a => 
             a.id === updatedAgentData.id ? updatedAgentData : a
@@ -26,9 +29,12 @@ export const AiAgentEditPage = ({ navigateTo, params }) => {
         navigateTo('aiAgentsList');
     };
 
-    // Tampilkan loading atau pesan jika data belum siap
     if (!agent) {
-        return <div>Loading agent data...</div>;
+        return (
+            <div className="text-center p-10">
+                <p>Memuat data agent...</p>
+            </div>
+        );
     }
 
     return (

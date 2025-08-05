@@ -1,26 +1,94 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
     Trash2, PlusCircle, Edit, Send, 
-    Image as ImageIcon, Smile, FileText, Mic, Video
+    Image as ImageIcon, Smile, FileText, Mic, Video, X
 } from 'lucide-react';
 import Switch from './common/Switch';
 import Modal from './common/Modal';
 
-// Komponen Modal Knowledge Base (Tidak ada perubahan)
-const KnowledgeBaseModal = ({ isOpen, onClose, onSave, kbData, setKbData }) => {
+// [PERUBAHAN] Komponen Modal Knowledge Base sekarang jauh lebih kompleks
+const KnowledgeBaseModal = ({ isOpen, onClose, onSave, kbData: initialKbData }) => {
+    const defaultKbState = { title: '', category: 'Panduan', content: '', files: [] };
+    const [kbData, setKbData] = useState(initialKbData || defaultKbState);
+    const fileInputRef = useRef(null);
+
+    useEffect(() => {
+        // Reset state saat modal dibuka dengan data baru
+        setKbData({ ...defaultKbState, ...(initialKbData || {}) });
+    }, [initialKbData, isOpen]);
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setKbData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleFileChange = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const newFile = {
+                    id: `kb_file_${Date.now()}`,
+                    name: file.name,
+                    type: file.type,
+                    dataUrl: e.target.result
+                };
+                setKbData(prev => ({ ...prev, files: [...(prev.files || []), newFile] }));
+            };
+            reader.readAsDataURL(file);
+        }
+        event.target.value = null;
+    };
+
+    const removeFile = (fileId) => {
+        setKbData(prev => ({ ...prev, files: prev.files.filter(f => f.id !== fileId) }));
+    };
+    
+    const handleFileToolbarClick = (accept) => fileInputRef.current && (fileInputRef.current.accept = accept, fileInputRef.current.click());
+    const handleInsertText = (text) => setKbData(prev => ({ ...prev, content: prev.content + text }));
+
     if (!isOpen) return null;
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={kbData && kbData.id ? "Edit Knowledge Base" : "Tambah Knowledge Base"}>
-            <form onSubmit={(e) => { e.preventDefault(); onSave(); }}>
-                <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Judul</label>
-                    <input type="text" value={kbData.title} onChange={(e) => setKbData({...kbData, title: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md" required />
+            <form onSubmit={(e) => { e.preventDefault(); onSave(kbData); }}>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Judul</label>
+                        <input name="title" type="text" value={kbData.title} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-md" required />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+                        <select name="category" value={kbData.category} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md">
+                            <option>Panduan</option>
+                            <option>Layanan</option>
+                            <option>Produk</option>
+                            <option>Best Practice</option>
+                            <option>Tips & Trik</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Konten</label>
+                        <div className="border border-gray-300 rounded-t-md p-2 flex items-center space-x-3 bg-gray-50">
+                            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+                            <button type="button" title="Sisipkan Gambar" onClick={() => handleFileToolbarClick('image/*')} className="p-1 text-gray-600 hover:text-indigo-600"><ImageIcon size={18} /></button>
+                            <button type="button" title="Sisipkan Dokumen (PDF)" onClick={() => handleFileToolbarClick('.pdf')} className="p-1 text-gray-600 hover:text-indigo-600"><FileText size={18} /></button>
+                            <button type="button" title="Sisipkan Emoji" onClick={() => handleInsertText('💡✨✅')} className="p-1 text-gray-600 hover:text-indigo-600"><Smile size={18} /></button>
+                        </div>
+                        <textarea name="content" rows="5" value={kbData.content} onChange={handleInputChange} className="block w-full px-3 py-2 border-l border-r border-b border-gray-300 rounded-b-md" placeholder="Isi dengan pengetahuan..."></textarea>
+                        {kbData.files && kbData.files.length > 0 && (
+                            <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                {kbData.files.map(file => (
+                                    <div key={file.id} className="relative group border rounded-lg overflow-hidden">
+                                        {file.type.startsWith('image/') ? <img src={file.dataUrl} alt={file.name} className="h-24 w-full object-cover" /> : <div className="h-24 w-full flex flex-col items-center justify-center bg-gray-100 p-2"><FileText className="w-8 h-8 text-gray-500" /><span className="text-xs text-center text-gray-600 mt-2 truncate">{file.name}</span></div>}
+                                        <button onClick={() => removeFile(file.id)} className="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100"><X size={14} /></button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
-                <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Konten</label>
-                    <textarea rows="4" value={kbData.content} onChange={(e) => setKbData({...kbData, content: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md" required></textarea>
-                </div>
-                <div className="flex justify-end gap-3">
+                <div className="flex justify-end gap-3 mt-6">
                     <button type="button" onClick={onClose} className="bg-white py-2 px-4 border border-gray-300 rounded-md">Batal</button>
                     <button type="submit" className="bg-indigo-600 text-white py-2 px-4 rounded-md">Simpan</button>
                 </div>
@@ -29,23 +97,51 @@ const KnowledgeBaseModal = ({ isOpen, onClose, onSave, kbData, setKbData }) => {
     );
 };
 
-// Komponen Test Conversation (Tidak ada perubahan)
+// Ganti komponen TestConversationUI yang lama dengan yang ini
 const TestConversationUI = ({ agentState }) => {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
+    const [isTyping, setIsTyping] = useState(false); // State untuk loading indicator
 
-    const handleSend = () => {
-        if (!input.trim()) return;
-        const newUserMessage = { sender: 'user', text: input };
-        
-        const botBehavior = agentState.behavior || "belum diatur";
-        const botResponse = { 
-            sender: 'bot', 
-            text: `(Respon Tes) Pesan Anda: "${input}".\n\nPerilaku bot saat ini: "${botBehavior}"` 
-        };
+    const handleSend = async () => {
+        if (!input.trim() || isTyping) return;
 
-        setMessages([...messages, newUserMessage, botResponse]);
+        const newUserMessage = { role: 'user', content: input };
+        const newMessages = [...messages, newUserMessage];
+        setMessages(newMessages);
         setInput('');
+        setIsTyping(true);
+
+        try {
+            // Panggil backend kita di localhost:5001
+            const response = await fetch('http://localhost:5001/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userInput: input,
+                    // Kita hanya butuh role dan content untuk dikirim ke OpenAI API
+                    conversationHistory: messages.map(({ role, content }) => ({ role, content })), 
+                    agentState: agentState, // Kirim seluruh state agent untuk konteks
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const data = await response.json();
+            const botResponse = { role: 'assistant', content: data.reply };
+            setMessages([...newMessages, botResponse]);
+
+        } catch (error) {
+            console.error("Error fetching AI response:", error);
+            const errorResponse = { role: 'assistant', content: 'Maaf, terjadi kesalahan. Tidak bisa mendapatkan respon dari bot saat ini.' };
+            setMessages([...newMessages, errorResponse]);
+        } finally {
+            setIsTyping(false);
+        }
     };
     
     return (
@@ -57,16 +153,23 @@ const TestConversationUI = ({ agentState }) => {
             <div className="flex-1 p-4 overflow-y-auto bg-gray-50 space-y-4">
                 {messages.length === 0 && <p className="text-center text-sm text-gray-400">Mulai percakapan untuk melihat respon bot...</p>}
                 {messages.map((msg, index) => (
-                    <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg whitespace-pre-wrap ${msg.sender === 'user' ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-800'}`}>
-                            {msg.text}
+                    <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg whitespace-pre-wrap ${msg.role === 'user' ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-800'}`}>
+                            {msg.content}
                         </div>
                     </div>
                 ))}
+                {isTyping && (
+                    <div className="flex justify-start">
+                        <div className="bg-gray-200 text-gray-800 px-3 py-2 rounded-lg">
+                            <span className="animate-pulse">Bot sedang mengetik...</span>
+                        </div>
+                    </div>
+                )}
             </div>
             <div className="p-4 border-t bg-white flex items-center gap-2">
-                <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleSend()} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" placeholder="Ketik pesan..." />
-                <button onClick={handleSend} className="bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 disabled:bg-gray-400 flex-shrink-0" disabled={!input.trim()}>
+                <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleSend()} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" placeholder="Ketik pesan..." disabled={isTyping} />
+                <button onClick={handleSend} className="bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 disabled:bg-gray-400 flex-shrink-0" disabled={!input.trim() || isTyping}>
                     <Send size={20} />
                 </button>
             </div>
@@ -75,16 +178,19 @@ const TestConversationUI = ({ agentState }) => {
 }
 
 const AiAgentForm = ({ initialData, onSubmit, onCancel, submitButtonText }) => {
-    const defaultAgentState = { name: '', company: '', behavior: '', status: 'Nonaktif', disableOnManualReply: true, canReadMessages: true, knowledgeBases: [] };
+    const defaultAgentState = { name: '', company: '', tone: 'Santai', behavior: '', status: 'Nonaktif', disableOnManualReply: true, canReadMessages: true, knowledgeBases: [], files: [] };
     const [agent, setAgent] = useState(initialData || defaultAgentState);
     const [activeTab, setActiveTab] = useState('behavior');
     
     const [isKbModalOpen, setIsKbModalOpen] = useState(false);
-    const [currentKb, setCurrentKb] = useState({ title: '', content: ''});
+    const [currentKb, setCurrentKb] = useState(null);
 
     const fileInputRef = useRef(null);
 
-    useEffect(() => { setAgent(initialData || defaultAgentState); }, [initialData]);
+    useEffect(() => { 
+        const data = { ...defaultAgentState, ...(initialData || {}) };
+        setAgent(data);
+    }, [initialData]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -100,39 +206,29 @@ const AiAgentForm = ({ initialData, onSubmit, onCancel, submitButtonText }) => {
         onSubmit(agent);
     };
 
-    // --- Logika untuk Toolbar di Textarea Behavior ---
-    const handleInsertText = (textToInsert) => {
-        setAgent(prev => ({
-            ...prev,
-            behavior: prev.behavior + textToInsert
-        }));
-    };
-
-    const handleEmojiClick = () => {
-        // Simulasi menyisipkan beberapa emoji
-        handleInsertText(' 😊👍🎉 ');
-    };
-
-    const handleFileToolbarClick = (acceptType) => {
-        if (fileInputRef.current) {
-            fileInputRef.current.accept = acceptType;
-            fileInputRef.current.click();
-        }
-    };
-
     const handleFileChange = (event) => {
         const file = event.target.files[0];
         if (file) {
-            // Simulasi: menyisipkan nama file sebagai placeholder ke dalam textarea
-            handleInsertText(` [file: ${file.name}] `);
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const newFile = { id: `file_${Date.now()}`, name: file.name, type: file.type, dataUrl: e.target.result };
+                setAgent(prev => ({ ...prev, files: [...(prev.files || []), newFile] }));
+            };
+            reader.readAsDataURL(file);
         }
-        // Reset file input agar bisa memilih file yang sama lagi
         event.target.value = null; 
     };
+    
+    const removeFile = (fileId) => {
+        setAgent(prev => ({ ...prev, files: prev.files.filter(f => f.id !== fileId) }));
+    };
 
-    // --- Logika untuk Knowledge Base ---
+    const handleInsertText = (text) => setAgent(prev => ({ ...prev, behavior: prev.behavior + text }));
+    const handleEmojiClick = () => handleInsertText(' 😊👍🎉 ');
+    const handleFileToolbarClick = (accept) => fileInputRef.current && (fileInputRef.current.accept = accept, fileInputRef.current.click());
+
     const handleOpenKbModal = (kb = null) => {
-        setCurrentKb(kb || { title: '', content: '' });
+        setCurrentKb(kb);
         setIsKbModalOpen(true);
     };
 
@@ -141,13 +237,13 @@ const AiAgentForm = ({ initialData, onSubmit, onCancel, submitButtonText }) => {
         setCurrentKb(null);
     };
 
-    const handleSaveKb = () => {
+    const handleSaveKb = (savedKbData) => {
         let updatedKbs;
-        if (currentKb && currentKb.id) {
-            updatedKbs = agent.knowledgeBases.map(kb => kb.id === currentKb.id ? currentKb : kb);
+        if (savedKbData.id) {
+            updatedKbs = (agent.knowledgeBases || []).map(kb => kb.id === savedKbData.id ? savedKbData : kb);
         } else {
-            const newKb = { ...currentKb, id: `kb_${Date.now()}`, createdAt: new Date().toISOString().split('T')[0] };
-            updatedKbs = [...agent.knowledgeBases, newKb];
+            const newKb = { ...savedKbData, id: `kb_${Date.now()}`, createdAt: new Date().toISOString().split('T')[0] };
+            updatedKbs = [...(agent.knowledgeBases || []), newKb];
         }
         setAgent(prev => ({ ...prev, knowledgeBases: updatedKbs }));
         handleCloseKbModal();
@@ -183,11 +279,21 @@ const AiAgentForm = ({ initialData, onSubmit, onCancel, submitButtonText }) => {
                              <div className="space-y-6">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Nama Bot</label>
-                                    <input type="text" name="name" value={agent.name} onChange={handleInputChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="Contoh: Bot Layanan Pelanggan" required />
+                                    <input type="text" name="name" value={agent.name} onChange={handleInputChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" required />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Produk / Perusahaan</label>
-                                    <input type="text" name="company" value={agent.company} onChange={handleInputChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="Contoh: PT Maju Jaya" />
+                                    <input type="text" name="company" value={agent.company} onChange={handleInputChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Gaya Bahasa</label>
+                                    <select name="tone" value={agent.tone} onChange={handleInputChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                        <option>Formal</option>
+                                        <option>Profesional</option>
+                                        <option>Santai</option>
+                                        <option>Humoris</option>
+                                        <option>Percakapan sehari-hari</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Behavior</label>
@@ -195,18 +301,21 @@ const AiAgentForm = ({ initialData, onSubmit, onCancel, submitButtonText }) => {
                                         <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
                                         <button type="button" title="Sisipkan Gambar" onClick={() => handleFileToolbarClick('image/*')} className="p-1 text-gray-600 hover:text-indigo-600"><ImageIcon size={18} /></button>
                                         <button type="button" title="Sisipkan Video" onClick={() => handleFileToolbarClick('video/*')} className="p-1 text-gray-600 hover:text-indigo-600"><Video size={18} /></button>
-                                        <button type="button" title="Sisipkan Dokumen" onClick={() => handleFileToolbarClick('.pdf,.doc,.docx,.txt')} className="p-1 text-gray-600 hover:text-indigo-600"><FileText size={18} /></button>
+                                        <button type="button" title="Sisipkan Dokumen (PDF)" onClick={() => handleFileToolbarClick('.pdf')} className="p-1 text-gray-600 hover:text-indigo-600"><FileText size={18} /></button>
                                         <button type="button" title="Sisipkan Suara" onClick={() => handleFileToolbarClick('audio/*')} className="p-1 text-gray-600 hover:text-indigo-600"><Mic size={18} /></button>
                                         <button type="button" title="Sisipkan Emoji" onClick={handleEmojiClick} className="p-1 text-gray-600 hover:text-indigo-600"><Smile size={18} /></button>
                                     </div>
-                                    <textarea 
-                                        rows="6" 
-                                        name="behavior" 
-                                        value={agent.behavior} 
-                                        onChange={handleInputChange} 
-                                        className="block w-full px-3 py-2 border-l border-r border-b border-gray-300 rounded-b-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" 
-                                        placeholder="Jelaskan bagaimana bot harus bersikap..."
-                                    ></textarea>
+                                    <textarea rows="6" name="behavior" value={agent.behavior} onChange={handleInputChange} className="block w-full px-3 py-2 border-l border-r border-b border-gray-300 rounded-b-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="Jelaskan bagaimana bot harus bersikap..."></textarea>
+                                    {agent.files && agent.files.length > 0 && (
+                                        <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                            {agent.files.map(file => (
+                                                <div key={file.id} className="relative group border rounded-lg overflow-hidden">
+                                                    {file.type.startsWith('image/') ? <img src={file.dataUrl} alt={file.name} className="h-24 w-full object-cover" /> : <div className="h-24 w-full flex flex-col items-center justify-center bg-gray-100 p-2"><FileText className="w-8 h-8 text-gray-500" /><span className="text-xs text-center text-gray-600 mt-2 truncate">{file.name}</span></div>}
+                                                    <button onClick={() => removeFile(file.id)} className="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"><X size={14} /></button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="border-t pt-6 space-y-4">
                                     <div className="flex items-center justify-between"><span className="text-sm font-medium text-gray-700">Status AI</span><Switch enabled={agent.status === 'Aktif'} setEnabled={(val) => handleSwitchChange('status', val ? 'Aktif' : 'Nonaktif')} /></div>
@@ -218,7 +327,7 @@ const AiAgentForm = ({ initialData, onSubmit, onCancel, submitButtonText }) => {
                         {activeTab === 'knowledge' && (
                             <div className="space-y-4">
                                 <div className="flex justify-end">
-                                    <button type="button" onClick={() => handleOpenKbModal()} className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700">
+                                    <button type="button" onClick={() => handleOpenKbModal(null)} className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700">
                                         <PlusCircle size={18}/> Tambah Knowledge
                                     </button>
                                 </div>
@@ -226,17 +335,17 @@ const AiAgentForm = ({ initialData, onSubmit, onCancel, submitButtonText }) => {
                                     <table className="w-full text-sm text-left">
                                         <thead className="bg-gray-50 text-xs text-gray-700 uppercase">
                                             <tr>
-                                                <th className="px-4 py-3">No</th>
                                                 <th className="px-4 py-3">Judul</th>
+                                                <th className="px-4 py-3">Kategori</th>
                                                 <th className="px-4 py-3">Dibuat</th>
                                                 <th className="px-4 py-3 text-center">Aksi</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {agent.knowledgeBases.map((kb, index) => (
+                                            {agent.knowledgeBases && agent.knowledgeBases.length > 0 ? agent.knowledgeBases.map((kb) => (
                                                 <tr key={kb.id} className="border-b hover:bg-gray-50">
-                                                    <td className="px-4 py-3">{index + 1}</td>
                                                     <td className="px-4 py-3 font-medium text-gray-900">{kb.title}</td>
+                                                    <td className="px-4 py-3 text-gray-600">{kb.category}</td>
                                                     <td className="px-4 py-3 text-gray-500">{kb.createdAt}</td>
                                                     <td className="px-4 py-3 text-center">
                                                         <div className="flex justify-center gap-2">
@@ -245,8 +354,7 @@ const AiAgentForm = ({ initialData, onSubmit, onCancel, submitButtonText }) => {
                                                         </div>
                                                     </td>
                                                 </tr>
-                                            ))}
-                                            {agent.knowledgeBases.length === 0 && (
+                                            )) : (
                                                 <tr><td colSpan="4" className="text-center py-8 text-gray-500">Belum ada knowledge base.</td></tr>
                                             )}
                                         </tbody>
@@ -266,7 +374,7 @@ const AiAgentForm = ({ initialData, onSubmit, onCancel, submitButtonText }) => {
                 )}
             </div>
             
-            {activeTab === 'knowledge' && <KnowledgeBaseModal isOpen={isKbModalOpen} onClose={handleCloseKbModal} onSave={handleSaveKb} kbData={currentKb} setKbData={setCurrentKb} />}
+            <KnowledgeBaseModal isOpen={isKbModalOpen} onClose={handleCloseKbModal} onSave={handleSaveKb} kbData={currentKb} />
         </div>
     );
 };

@@ -55,11 +55,9 @@ const QrCodeModal = ({ isOpen, onClose, onConfirm, sender }) => {
 };
 
 export const SenderPage = ({ navigateTo }) => {
-    // [PERBAIKAN] State sekarang diinisialisasi dengan array kosong untuk mencegah error
     const [senders, setSenders] = useState([]);
-    const [agents, setAgents] = useState([]); // Juga muat data agents untuk lookup
+    const [agents, setAgents] = useState([]);
 
-    // State lokal untuk UI (tidak berubah)
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isQrModalOpen, setIsQrModalOpen] = useState(false);
@@ -68,30 +66,35 @@ export const SenderPage = ({ navigateTo }) => {
     const [senderToEdit, setSenderToEdit] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // [PERBAIKAN] useEffect untuk memuat data dari localStorage saat komponen pertama kali dimuat
+    // [PERBAIKAN] Logika pemuatan data dibuat lebih aman untuk mencegah error JSON.parse
     useEffect(() => {
-        let storedSenders = JSON.parse(localStorage.getItem('blastbot_senders'));
-        if (!storedSenders) {
-            storedSenders = mockData.senders; // Ambil dari mockData jika tidak ada
-            localStorage.setItem('blastbot_senders', JSON.stringify(storedSenders));
-        }
-        setSenders(storedSenders);
+        const loadData = (key, fallbackData) => {
+            const storedDataJSON = localStorage.getItem(key);
+            // Cek jika data ada dan bukan string 'undefined'
+            if (storedDataJSON && storedDataJSON !== 'undefined') {
+                try {
+                    return JSON.parse(storedDataJSON);
+                } catch (e) {
+                    console.error(`Error parsing ${key} from localStorage`, e);
+                    return fallbackData; // Kembali ke data awal jika ada error parsing
+                }
+            }
+            // Jika tidak ada data di localStorage, inisialisasi dengan mockData
+            localStorage.setItem(key, JSON.stringify(fallbackData));
+            return fallbackData;
+        };
 
-        let storedAgents = JSON.parse(localStorage.getItem('blastbot_agents'));
-        if (!storedAgents) {
-            storedAgents = mockData.aiAgents;
-            localStorage.setItem('blastbot_agents', JSON.stringify(storedAgents));
-        }
-        setAgents(storedAgents);
+        setSenders(loadData('blastbot_senders', mockData.senders));
+        setAgents(loadData('blastbot_agents', mockData.aiAgents));
     }, []);
 
-    // [PERBAIKAN] Fungsi helper untuk menyimpan perubahan ke state dan localStorage
     const updateSendersInStorage = (newSenders) => {
         setSenders(newSenders);
         localStorage.setItem('blastbot_senders', JSON.stringify(newSenders));
     };
 
     const filteredSenders = useMemo(() => {
+        if (!Array.isArray(senders)) return []; // Pengaman tambahan
         if (!searchTerm) return senders;
         return senders.filter(sender =>
             sender.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -99,7 +102,7 @@ export const SenderPage = ({ navigateTo }) => {
         );
     }, [searchTerm, senders]);
 
-    // [PERBAIKAN] Semua handler sekarang menggunakan fungsi helper untuk menyimpan data
+    // Handler lainnya (tidak ada perubahan fungsional)
     const openAddModal = () => setIsAddModalOpen(true);
     const closeAddModal = () => { setIsAddModalOpen(false); setNewSender({ name: '', phone: '' }); };
     const handleAddSender = () => {
@@ -180,55 +183,62 @@ export const SenderPage = ({ navigateTo }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredSenders.map((sender, index) => {
-                            // [PERBAIKAN] Mencari agent dari state 'agents' yang sudah dimuat
-                            const connectedAgent = sender.aiAgentId
-                                ? agents.find(agent => agent.id === sender.aiAgentId)
-                                : null;
+                        {/* [PERBAIKAN] Menambahkan kondisi untuk menampilkan pesan jika tabel kosong */}
+                        {filteredSenders.length > 0 ? (
+                            filteredSenders.map((sender, index) => {
+                                const connectedAgent = sender.aiAgentId
+                                    ? agents.find(agent => agent.id === sender.aiAgentId)
+                                    : null;
 
-                            return (
-                                <tr key={sender.id} className="bg-white border-b hover:bg-gray-50">
-                                    <td className="px-6 py-4">{index + 1}</td>
-                                    <td className="px-6 py-4 font-medium text-gray-900">{sender.name}</td>
-                                    <td className="px-6 py-4">{sender.phone}</td>
-                                    <td className="px-6 py-4"><span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${sender.status === 'Aktif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}><span className={`w-2 h-2 mr-1.5 rounded-full ${sender.status === 'Aktif' ? 'bg-green-500' : 'bg-red-500'}`}></span>{sender.status}</span></td>
-                                    
-                                    <td className="px-6 py-4">
-                                        {connectedAgent ? (
-                                            <button 
-                                                onClick={() => navigateTo('aiAgentEdit', { aiAgentId: connectedAgent.id })}
-                                                className="flex items-center gap-2 text-sm font-medium text-indigo-700 hover:text-indigo-900"
-                                                title={`Kelola agent: ${connectedAgent.name}`}
-                                            >
-                                                <BrainCircuit size={16} />
-                                                <span className="truncate max-w-[120px]">{connectedAgent.name}</span>
-                                            </button>
-                                        ) : (
-                                            <button 
-                                                onClick={() => navigateTo('aiAgentsList')}
-                                                className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-800"
-                                                title="Hubungkan ke AI Agent"
-                                            >
-                                                <LinkIcon size={16} />
-                                                <span>Hubungkan AI</span>
-                                            </button>
-                                        )}
-                                    </td>
-                                    
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center space-x-2">
-                                            <button onClick={() => openEditModal(sender)} className="px-3 py-1 text-xs font-medium text-white bg-green-500 rounded-md hover:bg-green-600">Edit</button>
-                                            <button onClick={() => handleDeleteSender(sender.id)} className="px-3 py-1 text-xs font-medium text-white bg-red-500 rounded-md hover:bg-red-600">Hapus</button>
-                                            {sender.status === 'Aktif' ? (
-                                                <button onClick={() => handleLogout(sender.id)} className="px-3 py-1 text-xs font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600">Logout</button>
+                                return (
+                                    <tr key={sender.id} className="bg-white border-b hover:bg-gray-50">
+                                        <td className="px-6 py-4">{index + 1}</td>
+                                        <td className="px-6 py-4 font-medium text-gray-900">{sender.name}</td>
+                                        <td className="px-6 py-4">{sender.phone}</td>
+                                        <td className="px-6 py-4"><span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${sender.status === 'Aktif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}><span className={`w-2 h-2 mr-1.5 rounded-full ${sender.status === 'Aktif' ? 'bg-green-500' : 'bg-red-500'}`}></span>{sender.status}</span></td>
+                                        
+                                        <td className="px-6 py-4">
+                                            {connectedAgent ? (
+                                                <button onClick={() => navigateTo('aiAgentEdit', { aiAgentId: connectedAgent.id })} className="flex items-center gap-2 text-sm font-medium text-indigo-700 hover:text-indigo-900" title={`Kelola agent: ${connectedAgent.name}`}>
+                                                    <BrainCircuit size={16} />
+                                                    <span className="truncate max-w-[120px]">{connectedAgent.name}</span>
+                                                </button>
                                             ) : (
-                                                <button onClick={() => handleGenerateQr(sender)} className="px-3 py-1 text-xs font-medium text-white bg-purple-500 rounded-md hover:bg-purple-600">Generate QR</button>
+                                                <button onClick={() => navigateTo('aiAgentsList')} className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-800" title="Hubungkan ke AI Agent">
+                                                    <LinkIcon size={16} />
+                                                    <span>Hubungkan AI</span>
+                                                </button>
                                             )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            );
-                        })}
+                                        </td>
+                                        
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center space-x-2">
+                                                <button onClick={() => openEditModal(sender)} className="px-3 py-1 text-xs font-medium text-white bg-green-500 rounded-md hover:bg-green-600">Edit</button>
+                                                <button onClick={() => handleDeleteSender(sender.id)} className="px-3 py-1 text-xs font-medium text-white bg-red-500 rounded-md hover:bg-red-600">Hapus</button>
+                                                {sender.status === 'Aktif' ? (
+                                                    <button onClick={() => handleLogout(sender.id)} className="px-3 py-1 text-xs font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600">Logout</button>
+                                                ) : (
+                                                    <button onClick={() => handleGenerateQr(sender)} className="px-3 py-1 text-xs font-medium text-white bg-purple-500 rounded-md hover:bg-purple-600">Generate QR</button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })
+                        ) : (
+                            <tr>
+                                <td colSpan="6">
+                                    <div className="text-center py-10">
+                                        <p className="text-gray-500 font-semibold">Tidak ada sender ditemukan.</p>
+                                        {searchTerm ? (
+                                            <p className="text-gray-400 text-sm mt-2">Coba kata kunci lain atau kosongkan pencarian.</p>
+                                        ) : (
+                                            <p className="text-gray-400 text-sm mt-2">Klik "Tambah Sender" untuk membuat yang baru.</p>
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
@@ -239,5 +249,3 @@ export const SenderPage = ({ navigateTo }) => {
         </div>
     );
 };
-
-export default SenderPage;

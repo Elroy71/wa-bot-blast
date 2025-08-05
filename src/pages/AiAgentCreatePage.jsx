@@ -5,13 +5,12 @@ import AiAgentForm from '../components/AiAgentForm';
 export const AiAgentCreatePage = ({ navigateTo }) => {
     
     const handleAddAgent = (newAgentData) => {
-        // Baca data yang ada, tambahkan yang baru, lalu simpan kembali
         const storedAgents = JSON.parse(localStorage.getItem('blastbot_agents')) || [];
         const newAgent = { 
             ...newAgentData, 
             id: `agent_${Date.now()}`,
-            // Pastikan knowledgeBases memiliki createdAt jika baru ditambahkan
-            knowledgeBases: newAgentData.knowledgeBases.map(kb => ({...kb, createdAt: kb.createdAt || new Date().toISOString().split('T')[0]}))
+            files: newAgentData.files || [],
+            knowledgeBases: (newAgentData.knowledgeBases || []).map(kb => ({...kb, createdAt: kb.createdAt || new Date().toISOString().split('T')[0]}))
         };
         const newAgents = [newAgent, ...storedAgents];
         localStorage.setItem('blastbot_agents', JSON.stringify(newAgents));
