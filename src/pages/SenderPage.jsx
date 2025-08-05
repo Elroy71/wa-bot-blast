@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
-import { PlusCircle, Search, BrainCircuit } from 'lucide-react';
-import { mockData } from '../data/mockData';
+import React, { useState, useMemo, useEffect } from 'react';
+import { PlusCircle, Search, BrainCircuit, Link as LinkIcon } from 'lucide-react';
+import { mockData } from '../data/mockData'; // Digunakan untuk inisialisasi data awal
 
 // Komponen Modal Tambah (Tidak ada perubahan)
 const AddSenderModal = ({ isOpen, onClose, onSave, newSender, setNewSender }) => {
@@ -55,13 +55,41 @@ const QrCodeModal = ({ isOpen, onClose, onConfirm, sender }) => {
 };
 
 export const SenderPage = ({ navigateTo }) => {
-    const [senders, setSenders] = useState(mockData.senders);
+    // [PERBAIKAN] State sekarang diinisialisasi dengan array kosong untuk mencegah error
+    const [senders, setSenders] = useState([]);
+    const [agents, setAgents] = useState([]); // Juga muat data agents untuk lookup
+
+    // State lokal untuk UI (tidak berubah)
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isQrModalOpen, setIsQrModalOpen] = useState(false);
     const [newSender, setNewSender] = useState({ name: '', phone: '' });
     const [currentSender, setCurrentSender] = useState(null);
+    const [senderToEdit, setSenderToEdit] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+
+    // [PERBAIKAN] useEffect untuk memuat data dari localStorage saat komponen pertama kali dimuat
+    useEffect(() => {
+        let storedSenders = JSON.parse(localStorage.getItem('blastbot_senders'));
+        if (!storedSenders) {
+            storedSenders = mockData.senders; // Ambil dari mockData jika tidak ada
+            localStorage.setItem('blastbot_senders', JSON.stringify(storedSenders));
+        }
+        setSenders(storedSenders);
+
+        let storedAgents = JSON.parse(localStorage.getItem('blastbot_agents'));
+        if (!storedAgents) {
+            storedAgents = mockData.aiAgents;
+            localStorage.setItem('blastbot_agents', JSON.stringify(storedAgents));
+        }
+        setAgents(storedAgents);
+    }, []);
+
+    // [PERBAIKAN] Fungsi helper untuk menyimpan perubahan ke state dan localStorage
+    const updateSendersInStorage = (newSenders) => {
+        setSenders(newSenders);
+        localStorage.setItem('blastbot_senders', JSON.stringify(newSenders));
+    };
 
     const filteredSenders = useMemo(() => {
         if (!searchTerm) return senders;
@@ -71,40 +99,42 @@ export const SenderPage = ({ navigateTo }) => {
         );
     }, [searchTerm, senders]);
 
-    // Handlers Tambah (Tidak ada perubahan)
+    // [PERBAIKAN] Semua handler sekarang menggunakan fungsi helper untuk menyimpan data
     const openAddModal = () => setIsAddModalOpen(true);
     const closeAddModal = () => { setIsAddModalOpen(false); setNewSender({ name: '', phone: '' }); };
     const handleAddSender = () => {
         if (!newSender.name || !newSender.phone) return;
-        const senderToAdd = { id: `sender-${Date.now()}`, name: newSender.name, phone: newSender.phone, status: 'Tidak Aktif' };
-        setSenders(prev => [senderToAdd, ...prev]);
+        const senderToAdd = { id: `sender-${Date.now()}`, name: newSender.name, phone: newSender.phone, status: 'Tidak Aktif', aiAgentId: null };
+        updateSendersInStorage([senderToAdd, ...senders]);
         closeAddModal();
     };
 
-    // Handlers Edit (Tidak ada perubahan)
-    const openEditModal = (sender) => { setCurrentSender(sender); setIsEditModalOpen(true); };
-    const closeEditModal = () => { setIsEditModalOpen(false); setCurrentSender(null); };
+    const openEditModal = (sender) => { setSenderToEdit(sender); setIsEditModalOpen(true); };
+    const closeEditModal = () => { setIsEditModalOpen(false); setSenderToEdit(null); };
     const handleUpdateSender = () => {
-        if (!currentSender || !currentSender.name) return;
-        setSenders(prev => prev.map(s => s.id === currentSender.id ? currentSender : s));
+        if (!senderToEdit || !senderToEdit.name) return;
+        const newSenders = senders.map(s => s.id === senderToEdit.id ? senderToEdit : s);
+        updateSendersInStorage(newSenders);
         closeEditModal();
     };
-
-    // Handlers Aksi (Tidak ada perubahan)
+    
     const handleDeleteSender = (senderId) => {
         if (window.confirm("Apakah Anda yakin ingin menghapus sender ini? Aksi ini tidak dapat dibatalkan.")) {
-            setSenders(prev => prev.filter(s => s.id !== senderId));
+            const newSenders = senders.filter(s => s.id !== senderId);
+            updateSendersInStorage(newSenders);
         }
     };
     const handleLogout = (senderId) => {
         if (window.confirm("Anda yakin ingin logout dari nomor ini? Status akan menjadi tidak aktif.")) {
-            setSenders(prev => prev.map(s => s.id === senderId ? { ...s, status: 'Tidak Aktif' } : s));
+            const newSenders = senders.map(s => s.id === senderId ? { ...s, status: 'Tidak Aktif' } : s);
+            updateSendersInStorage(newSenders);
         }
     };
     const handleGenerateQr = (sender) => { setCurrentSender(sender); setIsQrModalOpen(true); };
     const handleConfirmScan = () => {
         if (!currentSender) return;
-        setSenders(prev => prev.map(s => s.id === currentSender.id ? { ...s, status: 'Aktif' } : s));
+        const newSenders = senders.map(s => s.id === currentSender.id ? { ...s, status: 'Aktif' } : s);
+        updateSendersInStorage(newSenders);
         setIsQrModalOpen(false);
         setCurrentSender(null);
     };
@@ -112,6 +142,7 @@ export const SenderPage = ({ navigateTo }) => {
 
     return (
         <div>
+            {/* Header (Tidak ada perubahan) */}
             <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
                 <h2 className="text-3xl font-bold text-gray-800">Daftar Sender</h2>
                 <div className="flex items-center space-x-3">
@@ -126,59 +157,87 @@ export const SenderPage = ({ navigateTo }) => {
                 </div>
             </div>
 
+            {/* Search Bar (Tidak ada perubahan) */}
             <div className="mb-6">
                 <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                         <Search size={20} className="text-gray-400" />
                     </div>
-                    <input
-                        type="text"
-                        placeholder="Cari berdasarkan nama atau nomor telepon..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <input type="text" placeholder="Cari berdasarkan nama atau nomor telepon..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
             </div>
             
             <div className="bg-white p-6 rounded-xl shadow-md overflow-x-auto">
                 <table className="w-full text-sm text-left text-gray-500">
                     <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                        <tr><th className="px-6 py-3">No</th><th className="px-6 py-3">Nama</th><th className="px-6 py-3">Nomor Telepon</th><th className="px-6 py-3">Status</th><th className="px-6 py-3">Aksi</th></tr>
+                        <tr>
+                            <th className="px-6 py-3">No</th>
+                            <th className="px-6 py-3">Nama</th>
+                            <th className="px-6 py-3">Nomor Telepon</th>
+                            <th className="px-6 py-3">Status</th>
+                            <th className="px-6 py-3">AI Agent</th>
+                            <th className="px-6 py-3">Aksi</th>
+                        </tr>
                     </thead>
                     <tbody>
-                        {filteredSenders.map((sender, index) => (
-                            <tr key={sender.id} className="bg-white border-b hover:bg-gray-50">
-                                <td className="px-6 py-4">{index + 1}</td>
-                                <td className="px-6 py-4 font-medium text-gray-900">{sender.name}</td>
-                                <td className="px-6 py-4">{sender.phone}</td>
-                                <td className="px-6 py-4"><span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${sender.status === 'Aktif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}><span className={`w-2 h-2 mr-1.5 rounded-full ${sender.status === 'Aktif' ? 'bg-green-500' : 'bg-red-500'}`}></span>{sender.status}</span></td>
-                                <td className="px-6 py-4">
-                                    <div className="flex items-center space-x-2">
-                                        <button onClick={() => openEditModal(sender)} className="px-3 py-1 text-xs font-medium text-white bg-green-500 rounded-md hover:bg-green-600">Edit</button>
-                                        <button onClick={() => handleDeleteSender(sender.id)} className="px-3 py-1 text-xs font-medium text-white bg-red-500 rounded-md hover:bg-red-600">Hapus</button>
-                                        {sender.status === 'Aktif' ? (
-                                            <button onClick={() => handleLogout(sender.id)} className="px-3 py-1 text-xs font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600">Logout</button>
+                        {filteredSenders.map((sender, index) => {
+                            // [PERBAIKAN] Mencari agent dari state 'agents' yang sudah dimuat
+                            const connectedAgent = sender.aiAgentId
+                                ? agents.find(agent => agent.id === sender.aiAgentId)
+                                : null;
+
+                            return (
+                                <tr key={sender.id} className="bg-white border-b hover:bg-gray-50">
+                                    <td className="px-6 py-4">{index + 1}</td>
+                                    <td className="px-6 py-4 font-medium text-gray-900">{sender.name}</td>
+                                    <td className="px-6 py-4">{sender.phone}</td>
+                                    <td className="px-6 py-4"><span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${sender.status === 'Aktif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}><span className={`w-2 h-2 mr-1.5 rounded-full ${sender.status === 'Aktif' ? 'bg-green-500' : 'bg-red-500'}`}></span>{sender.status}</span></td>
+                                    
+                                    <td className="px-6 py-4">
+                                        {connectedAgent ? (
+                                            <button 
+                                                onClick={() => navigateTo('aiAgentEdit', { aiAgentId: connectedAgent.id })}
+                                                className="flex items-center gap-2 text-sm font-medium text-indigo-700 hover:text-indigo-900"
+                                                title={`Kelola agent: ${connectedAgent.name}`}
+                                            >
+                                                <BrainCircuit size={16} />
+                                                <span className="truncate max-w-[120px]">{connectedAgent.name}</span>
+                                            </button>
                                         ) : (
-                                            <button onClick={() => handleGenerateQr(sender)} className="px-3 py-1 text-xs font-medium text-white bg-purple-500 rounded-md hover:bg-purple-600">Generate QR</button>
+                                            <button 
+                                                onClick={() => navigateTo('aiAgentsList')}
+                                                className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-800"
+                                                title="Hubungkan ke AI Agent"
+                                            >
+                                                <LinkIcon size={16} />
+                                                <span>Hubungkan AI</span>
+                                            </button>
                                         )}
-                                        {/* PERBARUAN: Mengarah ke halaman aiAgentEdit dengan membawa ID sender */}
-                                        <button onClick={() => navigateTo('aiAgentEdit', { senderId: sender.id })} className="px-3 py-1 text-xs font-medium text-gray-800 bg-gray-200 rounded-md hover:bg-gray-300">AI Agent</button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
+                                    </td>
+                                    
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center space-x-2">
+                                            <button onClick={() => openEditModal(sender)} className="px-3 py-1 text-xs font-medium text-white bg-green-500 rounded-md hover:bg-green-600">Edit</button>
+                                            <button onClick={() => handleDeleteSender(sender.id)} className="px-3 py-1 text-xs font-medium text-white bg-red-500 rounded-md hover:bg-red-600">Hapus</button>
+                                            {sender.status === 'Aktif' ? (
+                                                <button onClick={() => handleLogout(sender.id)} className="px-3 py-1 text-xs font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600">Logout</button>
+                                            ) : (
+                                                <button onClick={() => handleGenerateQr(sender)} className="px-3 py-1 text-xs font-medium text-white bg-purple-500 rounded-md hover:bg-purple-600">Generate QR</button>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
             
             <AddSenderModal isOpen={isAddModalOpen} onClose={closeAddModal} onSave={handleAddSender} newSender={newSender} setNewSender={setNewSender} />
-            <EditSenderModal isOpen={isEditModalOpen} onClose={closeEditModal} onSave={handleUpdateSender} senderToEdit={currentSender} setSenderToEdit={setCurrentSender} />
+            <EditSenderModal isOpen={isEditModalOpen} onClose={closeEditModal} onSave={handleUpdateSender} senderToEdit={senderToEdit} setSenderToEdit={setSenderToEdit} />
             <QrCodeModal isOpen={isQrModalOpen} onClose={closeQrModal} onConfirm={handleConfirmScan} sender={currentSender} />
-
-
-            
         </div>
     );
 };
+
 export default SenderPage;
