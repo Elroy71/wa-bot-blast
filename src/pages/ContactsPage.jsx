@@ -67,7 +67,7 @@ const ContactsPage = ({
         onDeleteContact(id); // Panggil fungsi dari props
     };
 
-    // Handler untuk Implementasi Import Excel Sebenarnya
+  // Handler untuk Implementasi Import Excel Sebenarnya
     const handleImportExcel = () => {
         if (!excelFile) {
             alert('Silakan pilih file Excel terlebih dahulu.');
@@ -81,35 +81,63 @@ const ContactsPage = ({
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
-                // Menggunakan header eksplisit untuk memastikan urutan kolom
-                const json = XLSX.utils.sheet_to_json(worksheet, { header: ['name', 'phone', 'email', 'gender'] });
-                
-                // Hapus baris header jika ada (biasanya baris pertama)
-                const jsonData = json.slice(1);
 
-                // Validasi dan format data baru
-                let lastId = contacts[contacts.length - 1]?.id || 0;
-                const newContacts = jsonData.map((contact, index) => {
-                    // Pastikan nomor telepon ada dan berupa string/number
-                    if (!contact.phone || contact.phone.toString().trim() === '') {
-                        throw new Error(`Kontak di baris ${index + 2} tidak memiliki nomor telepon.`);
+                // 1. Konversi sheet ke JSON secara otomatis (membiarkan library mendeteksi header)
+                const json = XLSX.utils.sheet_to_json(worksheet);
+
+                if (json.length === 0) {
+                    throw new Error("File Excel kosong atau format tidak dapat dibaca.");
+                }
+
+                // 2. Fungsi pintar untuk mencari header yang relevan (tidak sensitif huruf besar/kecil)
+                const findHeader = (aliases) => {
+                    const headers = Object.keys(json[0]);
+                    for (const alias of aliases) {
+                        const found = headers.find(h => h.toLowerCase().replace(/ /g, '') === alias);
+                        if (found) return found;
                     }
-                    return {
-                        id: ++lastId,
-                        name: contact.name || 'No Name',
-                        phone: contact.phone.toString(),
-                        email: contact.email || '',
-                        gender: ['Pria', 'Wanita'].includes(contact.gender) ? contact.gender : 'Pria',
-                    };
-                }).filter(Boolean); // Filter null/undefined jika ada error
+                    return null;
+                };
 
-                setContacts(prev => [...prev, ...newContacts]);
-                alert(`${newContacts.length} kontak berhasil diimpor!`);
+                const nameKey = findHeader(['nama', 'name', 'namalengkap']);
+                const phoneKey = findHeader(['phone', 'hp', 'nohp', 'nomorhp', 'nomortelepon', 'no.hp']);
+                const emailKey = findHeader(['email', 'surel']);
+                const genderKey = findHeader(['gender', 'jeniskelamin']);
+                
+                // 3. Validasi: Pastikan kolom telepon/HP ditemukan
+                if (!phoneKey) {
+                    throw new Error("Kolom untuk nomor telepon tidak ditemukan. Pastikan ada kolom dengan judul seperti 'No HP', 'Phone', atau 'Nomor Telepon'.");
+                }
+
+                // 4. Proses setiap baris menggunakan header yang sudah ditemukan
+                const newContacts = json.map((row, index) => {
+                    const phone = row[phoneKey]?.toString().trim();
+                    
+                    // Lewati baris jika tidak ada nomor telepon
+                    if (!phone) {
+                        console.warn(`Melewatkan baris ${index + 2} karena tidak ada nomor telepon.`);
+                        return null;
+                    }
+
+                    return {
+                        name: row[nameKey] || 'No Name',
+                        phone: phone,
+                        email: row[emailKey] || '',
+                        gender: ['Pria', 'Wanita'].includes(row[genderKey]) ? row[genderKey] : 'Pria',
+                    };
+                }).filter(Boolean); // Menghapus baris yang dilewati (null)
+
+                if (newContacts.length === 0) {
+                    throw new Error("Tidak ada data kontak yang valid untuk diimpor.");
+                }
+                
+                // Panggil fungsi dari props untuk menyimpan data
+                onImportContacts(newContacts); 
                 closeModal();
 
             } catch (error) {
                 console.error("Error parsing Excel file:", error);
-                alert(`Gagal memproses file. Pastikan format benar. Error: ${error.message}`);
+                alert(`Gagal memproses file: ${error.message}`);
             }
         };
         reader.onerror = (error) => {

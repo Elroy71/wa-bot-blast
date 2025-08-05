@@ -17,29 +17,54 @@ export const recentBlasts = [
 
 // Struktur data diperbarui untuk mendukung fitur baru
 export const mockData = {
-    senders: [
-        { id: 1, name: 'CS Utama', phone: '+6281234567890', aiAgentId: 1, status: 'Aktif' },
-        { id: 2, name: 'Marketing', phone: '+6281234567891', aiAgentId: 2, status: 'Aktif' },
-        { id: 3, name: 'Support Teknis', phone: '+6281234567892', aiAgentId: null, status: 'Nonaktif' },
+    // Daftar sender, beberapa sudah terhubung dengan aiAgentId, beberapa belum (null)
+    sendersData: [
+        { id: 'sender-1', name: 'Sales WhatsApp', phone: '+6281234567890', status: 'Aktif', aiAgentId: 'agent-1' },
+        { id: 'sender-2', name: 'Support Center', phone: '+6281234567891', status: 'Aktif', aiAgentId: 'agent-2' },
+        { id: 'sender-3', name: 'Info Promo', phone: '+6281234567892', status: 'Nonaktif', aiAgentId: null },
+        { id: 'sender-4', name: 'Akun Bisnis Utama', phone: '+6281234567893', status: 'Aktif', aiAgentId: null },
     ],
-    aiAgents: [
+    aiAgentsData: [
         { 
-            id: 1, 
-            name: 'Bot Layanan Pelanggan',
-            company: 'Toko Kita',
-            behavior: 'Ramah, membantu, dan selalu mengarahkan ke solusi. Jangan pernah menjanjikan diskon.',
-            status: 'Aktif',
-            disableOnManualReply: true,
-            canReadMessages: true,
-            knowledgeBases: [
-                { id: 'k1', title: 'Info Produk A', content: 'Produk A adalah produk unggulan kami...', photo: null, video: null, link: 'https://tokokita.com/produk-a' },
-                { id: 'k2', title: 'Jam Operasional', content: 'Jam operasional kami adalah Senin-Jumat, 09:00 - 17:00 WIB.', photo: null, video: null, link: null },
-            ]
+        id: 'agent-1', 
+        name: 'Bot Customer Service', 
+        company: 'PT Maju Jaya', 
+        behavior: 'Ramah dan membantu, selalu berikan solusi terbaik untuk pelanggan.',
+        status: 'Aktif',
+        disableOnManualReply: true,
+        canReadMessages: true,
+        knowledgeBases: [
+            // PERUBAHAN: Menambahkan createdAt
+            { id: 'kb-1', title: 'FAQ Produk A', content: 'Produk A adalah solusi inovatif untuk...', createdAt: '2024-08-01' },
+            { id: 'kb-2', title: 'Jam Operasional', content: 'Kantor kami buka dari jam 9 pagi hingga 5 sore.', createdAt: '2024-08-02' }
+        ]
         },
-        { id: 2, name: 'Bot Promosi', company: 'Toko Kita', behavior: 'Antusias dan proaktif menawarkan promo.', status: 'Aktif', disableOnManualReply: false, canReadMessages: false, knowledgeBases: [] },
+
+        { 
+        id: 'agent-2', 
+        name: 'Agent Penjualan Properti', 
+        company: 'Properti Impian', 
+        behavior: 'Proaktif dalam menawarkan properti yang sesuai dengan kebutuhan calon pembeli.',
+        status: 'Aktif',
+        disableOnManualReply: false,
+        canReadMessages: true,
+        knowledgeBases: [
+            { id: 'kb-3', title: 'Info Cluster Diamond', content: 'Tipe 45/90, 2 kamar tidur, 1 kamar mandi...' }
+        ]
+        },
+        { 
+        id: 'agent-3', 
+        name: 'Bot Booking Restoran', 
+        company: 'Kuliner Nusantara', 
+        behavior: 'Cepat dan efisien dalam memproses reservasi meja.',
+        status: 'Nonaktif',
+        disableOnManualReply: true,
+        canReadMessages: false,
+        knowledgeBases: []
+        }
     ],
-    // Data lain (contacts, groups, blasts) bisa ditambahkan di sini
-};
+    };
+
 
 export const contacts = [
     { id: 1, name: 'Ahmad Subarjo', phone: '+6285712345678', group: 'UKM Bola', added: 'Manual' },

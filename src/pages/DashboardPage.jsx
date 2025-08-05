@@ -4,7 +4,7 @@ import { dashboardStats, recentBlasts } from '../data/mockData';
 
 const DashboardPage = () => (
     <div>
-        <h2 className="text-3xl font-bold text-gray-800 mb-6">Beranda</h2>
+        <h2 className="text-3xl font-bold text-gray-800 mb-6">Dashboard</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {dashboardStats.map(item => <StatCard key={item.id} item={item} />)}
         </div>
