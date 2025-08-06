@@ -6,14 +6,13 @@ import {
 import Switch from './common/Switch';
 import Modal from './common/Modal';
 
-// [PERUBAHAN] Komponen Modal Knowledge Base sekarang jauh lebih kompleks
+// Komponen Modal dengan validasi ukuran file
 const KnowledgeBaseModal = ({ isOpen, onClose, onSave, kbData: initialKbData }) => {
     const defaultKbState = { title: '', category: 'Panduan', content: '', files: [] };
     const [kbData, setKbData] = useState(initialKbData || defaultKbState);
     const fileInputRef = useRef(null);
 
     useEffect(() => {
-        // Reset state saat modal dibuka dengan data baru
         setKbData({ ...defaultKbState, ...(initialKbData || {}) });
     }, [initialKbData, isOpen]);
 
@@ -22,21 +21,49 @@ const KnowledgeBaseModal = ({ isOpen, onClose, onSave, kbData: initialKbData }) 
         setKbData(prev => ({ ...prev, [name]: value }));
     };
 
+    // [PERBAIKAN] Fungsi ini sekarang memiliki validasi ukuran file
     const handleFileChange = (event) => {
         const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const newFile = {
-                    id: `kb_file_${Date.now()}`,
-                    name: file.name,
-                    type: file.type,
-                    dataUrl: e.target.result
-                };
-                setKbData(prev => ({ ...prev, files: [...(prev.files || []), newFile] }));
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+
+        const IMAGE_MAX_SIZE_MB = 1;
+        const PDF_MAX_SIZE_MB = 2;
+        const imageLimitBytes = IMAGE_MAX_SIZE_MB * 1024 * 1024;
+        const pdfLimitBytes = PDF_MAX_SIZE_MB * 1024 * 1024;
+
+        // Validasi untuk gambar
+        if (file.type.startsWith('image/')) {
+            if (file.size > imageLimitBytes) {
+                alert(`Ukuran gambar tidak boleh melebihi ${IMAGE_MAX_SIZE_MB} MB.`);
+                return; // Hentikan proses jika file terlalu besar
+            }
+        } 
+        // Validasi untuk PDF
+        else if (file.type === 'application/pdf') {
+            if (file.size > pdfLimitBytes) {
+                alert(`Ukuran dokumen PDF tidak boleh melebihi ${PDF_MAX_SIZE_MB} MB.`);
+                return; // Hentikan proses jika file terlalu besar
+            }
+        } 
+        // Tolak file lain
+        else {
+            alert('Tipe file tidak didukung. Harap unggah gambar (jpg, png) atau PDF.');
+            return;
         }
+
+        // Jika validasi lolos, lanjutkan proses pembacaan file
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const newFile = {
+                id: `kb_file_${Date.now()}`,
+                name: file.name,
+                type: file.type,
+                dataUrl: e.target.result
+            };
+            setKbData(prev => ({ ...prev, files: [...(prev.files || []), newFile] }));
+        };
+        reader.readAsDataURL(file);
+        
         event.target.value = null;
     };
 
@@ -71,8 +98,7 @@ const KnowledgeBaseModal = ({ isOpen, onClose, onSave, kbData: initialKbData }) 
                         <label className="block text-sm font-medium text-gray-700 mb-1">Konten</label>
                         <div className="border border-gray-300 rounded-t-md p-2 flex items-center space-x-3 bg-gray-50">
                             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
-                            <button type="button" title="Sisipkan Gambar" onClick={() => handleFileToolbarClick('image/*')} className="p-1 text-gray-600 hover:text-indigo-600"><ImageIcon size={18} /></button>
-                            <button type="button" title="Sisipkan Dokumen (PDF)" onClick={() => handleFileToolbarClick('.pdf')} className="p-1 text-gray-600 hover:text-indigo-600"><FileText size={18} /></button>
+                            <button type="button" title="Sisipkan Gambar atau PDF" onClick={() => handleFileToolbarClick('image/*,application/pdf')} className="p-1 text-gray-600 hover:text-indigo-600"><FileText size={18} /></button>
                             <button type="button" title="Sisipkan Emoji" onClick={() => handleInsertText('💡✨✅')} className="p-1 text-gray-600 hover:text-indigo-600"><Smile size={18} /></button>
                         </div>
                         <textarea name="content" rows="5" value={kbData.content} onChange={handleInputChange} className="block w-full px-3 py-2 border-l border-r border-b border-gray-300 rounded-b-md" placeholder="Isi dengan pengetahuan..."></textarea>
@@ -97,11 +123,19 @@ const KnowledgeBaseModal = ({ isOpen, onClose, onSave, kbData: initialKbData }) 
     );
 };
 
-// Ganti komponen TestConversationUI yang lama dengan yang ini
+
+// Komponen TestConversationUI (Tidak perlu diubah dari versi terakhir)
 const TestConversationUI = ({ agentState }) => {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
-    const [isTyping, setIsTyping] = useState(false); // State untuk loading indicator
+    const [isTyping, setIsTyping] = useState(false);
+    const chatContainerRef = useRef(null);
+
+    useEffect(() => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+    }, [messages, isTyping]);
 
     const handleSend = async () => {
         if (!input.trim() || isTyping) return;
@@ -112,8 +146,9 @@ const TestConversationUI = ({ agentState }) => {
         setInput('');
         setIsTyping(true);
 
+        // [PENTING] Tidak ada lagi optimasi di sini. Kita kirim seluruh agentState
+        // agar backend bisa mengakses dataUrl dari file PDF.
         try {
-            // Panggil backend kita di localhost:5001
             const response = await fetch('http://localhost:5001/api/chat', {
                 method: 'POST',
                 headers: {
@@ -121,36 +156,36 @@ const TestConversationUI = ({ agentState }) => {
                 },
                 body: JSON.stringify({
                     userInput: input,
-                    // Kita hanya butuh role dan content untuk dikirim ke OpenAI API
                     conversationHistory: messages.map(({ role, content }) => ({ role, content })), 
-                    agentState: agentState, // Kirim seluruh state agent untuk konteks
+                    agentState: agentState, 
                 }),
             });
 
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Network response was not ok');
             }
 
             const data = await response.json();
             const botResponse = { role: 'assistant', content: data.reply };
-            setMessages([...newMessages, botResponse]);
+            setMessages(prevMessages => [...prevMessages, botResponse]);
 
         } catch (error) {
             console.error("Error fetching AI response:", error);
-            const errorResponse = { role: 'assistant', content: 'Maaf, terjadi kesalahan. Tidak bisa mendapatkan respon dari bot saat ini.' };
-            setMessages([...newMessages, errorResponse]);
+            const errorResponse = { role: 'assistant', content: `Maaf, terjadi kesalahan: ${error.message}` };
+            setMessages(prevMessages => [...prevMessages, errorResponse]);
         } finally {
             setIsTyping(false);
         }
     };
     
     return (
-        <div className="border border-gray-200 rounded-xl flex flex-col h-[550px] bg-white">
+        <div className="border border-gray-200 rounded-xl flex flex-col h-[600px] bg-white">
             <div className="p-4 border-b">
                 <h4 className="font-bold text-gray-800">Uji Coba Percakapan</h4>
                 <p className="text-xs text-gray-500">Tes perilaku agent Anda secara langsung.</p>
             </div>
-            <div className="flex-1 p-4 overflow-y-auto bg-gray-50 space-y-4">
+            <div ref={chatContainerRef} className="flex-1 p-4 overflow-y-auto bg-gray-50 space-y-4">
                 {messages.length === 0 && <p className="text-center text-sm text-gray-400">Mulai percakapan untuk melihat respon bot...</p>}
                 {messages.map((msg, index) => (
                     <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -168,15 +203,30 @@ const TestConversationUI = ({ agentState }) => {
                 )}
             </div>
             <div className="p-4 border-t bg-white flex items-center gap-2">
-                <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleSend()} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" placeholder="Ketik pesan..." disabled={isTyping} />
-                <button onClick={handleSend} className="bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 disabled:bg-gray-400 flex-shrink-0" disabled={!input.trim() || isTyping}>
+                <input 
+                    type="text" 
+                    value={input} 
+                    onChange={e => setInput(e.target.value)} 
+                    onKeyPress={e => e.key === 'Enter' && handleSend()} 
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" 
+                    placeholder="Ketik pesan..." 
+                    disabled={isTyping || agentState.status !== 'Aktif'} 
+                />
+                <button 
+                    onClick={handleSend} 
+                    className="bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed flex-shrink-0" 
+                    disabled={!input.trim() || isTyping || agentState.status !== 'Aktif'}
+                    title={agentState.status !== 'Aktif' ? 'Aktifkan status AI untuk memulai percakapan' : 'Kirim pesan'}
+                >
                     <Send size={20} />
                 </button>
             </div>
         </div>
     );
-}
+};
 
+
+// Komponen Utama Form
 const AiAgentForm = ({ initialData, onSubmit, onCancel, submitButtonText }) => {
     const defaultAgentState = { name: '', company: '', tone: 'Santai', behavior: '', status: 'Nonaktif', disableOnManualReply: true, canReadMessages: true, knowledgeBases: [], files: [] };
     const [agent, setAgent] = useState(initialData || defaultAgentState);
@@ -250,10 +300,8 @@ const AiAgentForm = ({ initialData, onSubmit, onCancel, submitButtonText }) => {
     };
     
     const handleRemoveKb = (kbId) => {
-        if(window.confirm('Anda yakin ingin menghapus knowledge base ini?')) {
-            const updatedKbs = agent.knowledgeBases.filter(kb => kb.id !== kbId);
-            setAgent(prev => ({ ...prev, knowledgeBases: updatedKbs }));
-        }
+        const updatedKbs = agent.knowledgeBases.filter(kb => kb.id !== kbId);
+        setAgent(prev => ({ ...prev, knowledgeBases: updatedKbs }));
     };
 
     return (
@@ -273,7 +321,7 @@ const AiAgentForm = ({ initialData, onSubmit, onCancel, submitButtonText }) => {
             </div>
 
             <div className="flex-1">
-                <form onSubmit={handleSubmit} className={activeTab === 'test' ? 'hidden' : 'flex flex-col'}>
+                <form onSubmit={handleSubmit} className={activeTab === 'test' ? 'hidden' : 'flex flex-col h-full'}>
                     <div className="flex-1">
                         {activeTab === 'behavior' && (
                              <div className="space-y-6">

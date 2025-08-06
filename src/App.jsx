@@ -98,7 +98,7 @@ const Sidebar = ({
                 {isDesktopExpanded && (
                     <div className="flex items-center overflow-hidden">
                         <AppIcon className="text-white flex-shrink-0" size={28} />
-                        <h1 className="text-2xl font-bold ml-3 whitespace-nowrap">WA-Man</h1>
+                        <h1 className="text-2xl font-bold ml-3 whitespace-nowrap">BlastBotAI</h1>
                     </div>
                 )}
                 <button onClick={toggleDesktopSidebar} className="p-2 rounded-full hover:bg-indigo-800 flex-shrink-0 hidden md:block">
