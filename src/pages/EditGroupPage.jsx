@@ -3,30 +3,56 @@ import { ArrowLeft, Users, Plus } from 'lucide-react';
 import SearchableContactList from '../components/SearchableContactList';
 import AddContactModal from '../components/AddContactModal';
 
-const EditGroupPage = ({ navigateTo, params, groups, contacts, handleUpdateGroup, handleAddContact }) => {
+// PERUBAHAN: Komponen tidak lagi menerima props dari App.jsx
+const EditGroupPage = ({ navigateTo, params }) => {
     const { groupId } = params;
 
-    // State lokal untuk form, agar tidak langsung mengubah data utama
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [selectedMembers, setSelectedMembers] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    
+    // State untuk data dan loading
+    const [allContacts, setAllContacts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    // useEffect untuk mengisi form saat komponen pertama kali dimuat
+    // useEffect untuk mengambil data detail grup DAN semua kontak secara bersamaan
     useEffect(() => {
-        const groupToEdit = groups.find(g => g.id === groupId);
-        if (groupToEdit) {
-            setName(groupToEdit.name);
-            setDescription(groupToEdit.description);
-            setSelectedMembers(groupToEdit.members);
-            setIsLoading(false);
-        } else {
-            // Jika grup tidak ditemukan (misal: URL salah), kembali ke daftar grup
-            alert('Grup tidak ditemukan.');
-            navigateTo('groups');
-        }
-    }, [groupId, groups, navigateTo]);
+        const fetchData = async () => {
+            try {
+                setIsLoading(true);
+                setError(null);
+
+                // Mengambil data grup dan data kontak secara paralel
+                const [groupResponse, contactsResponse] = await Promise.all([
+                    fetch(`http://localhost:3000/api/groups/${groupId}`),
+                    fetch('http://localhost:3000/api/contacts')
+                ]);
+
+                if (!groupResponse.ok) throw new Error('Grup tidak ditemukan atau gagal dimuat.');
+                if (!contactsResponse.ok) throw new Error('Gagal memuat daftar kontak.');
+
+                const groupData = await groupResponse.json();
+                const contactsData = await contactsResponse.json();
+
+                // Mengisi form dengan data dari backend
+                setName(groupData.name);
+                setDescription(groupData.description);
+                setSelectedMembers(groupData.members); // Backend mengirim array ID anggota
+                setAllContacts(contactsData);
+
+            } catch (err) {
+                setError(err.message);
+                alert(err.message);
+                navigateTo('groups');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [groupId, navigateTo]);
 
     const handleContactSelect = (contactId) => {
         setSelectedMembers(prev =>
@@ -36,26 +62,58 @@ const EditGroupPage = ({ navigateTo, params, groups, contacts, handleUpdateGroup
         );
     };
 
-    const handleSaveNewContact = (newContactData) => {
-        const newContact = handleAddContact(newContactData);
-        setSelectedMembers(prev => [...prev, newContact.id]);
-        setIsModalOpen(false);
+    // Fungsi untuk menyimpan kontak baru ke backend
+    const handleSaveNewContact = async (newContactData) => {
+        try {
+            const response = await fetch('http://localhost:3000/api/contacts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newContactData),
+            });
+            if (!response.ok) throw new Error('Gagal menyimpan kontak baru');
+            
+            const newContact = await response.json();
+            setIsModalOpen(false);
+            alert('Kontak baru berhasil ditambahkan!');
+            // Ambil ulang daftar kontak untuk menampilkan yang baru
+            setAllContacts(prev => [...prev, newContact.data]);
+        } catch (error) {
+            alert(error.message);
+        }
     };
-
-    const handleSaveChanges = (e) => {
+    
+    // Fungsi untuk menyimpan perubahan
+    const handleSaveChanges = async (e) => {
         e.preventDefault();
         if (!name.trim()) {
             alert("Nama grup tidak boleh kosong.");
             return;
         }
+
         const updatedData = { name, description, members: selectedMembers };
-        handleUpdateGroup(groupId, updatedData); // Panggil fungsi update dari App.jsx
-        navigateTo('groups');
+
+        try {
+            const response = await fetch(`http://localhost:3000/api/groups/${groupId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedData),
+            });
+
+            if (!response.ok) throw new Error('Gagal memperbarui grup');
+
+            alert('Perubahan berhasil disimpan!');
+            navigateTo('groups');
+        } catch (err) {
+            alert(err.message);
+        }
     };
 
-    // Tampilkan pesan loading selagi data dicari
     if (isLoading) {
         return <div className="text-center p-10">Memuat data grup...</div>;
+    }
+    
+    if (error) {
+        return <div className="text-center p-10 text-red-600">Error: {error}</div>;
     }
 
     return (
@@ -69,8 +127,8 @@ const EditGroupPage = ({ navigateTo, params, groups, contacts, handleUpdateGroup
                 </div>
                 
                 <form onSubmit={handleSaveChanges} className="bg-white p-8 rounded-xl shadow-md space-y-6">
-                    {/* Input Nama dan Deskripsi */}
-                    <div>
+                    {/* ... (bagian form lainnya sama persis) ... */}
+                     <div>
                         <label htmlFor="group-name" className="block text-sm font-medium text-gray-700 mb-1">Nama Grup</label>
                         <input type="text" id="group-name" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" required />
                     </div>
@@ -79,7 +137,6 @@ const EditGroupPage = ({ navigateTo, params, groups, contacts, handleUpdateGroup
                         <textarea id="group-description" value={description} onChange={(e) => setDescription(e.target.value)} rows="3" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></textarea>
                     </div>
 
-                    {/* Pemilihan Anggota */}
                     <div>
                         <div className="flex justify-between items-center mb-2">
                             <label className="block text-sm font-medium text-gray-700">Anggota Grup</label>
@@ -89,7 +146,7 @@ const EditGroupPage = ({ navigateTo, params, groups, contacts, handleUpdateGroup
                             </button>
                         </div>
                         <SearchableContactList 
-                            contacts={contacts}
+                            contacts={allContacts}
                             selectedContactIds={selectedMembers}
                             onContactSelect={handleContactSelect}
                         />
@@ -99,7 +156,6 @@ const EditGroupPage = ({ navigateTo, params, groups, contacts, handleUpdateGroup
                         </div>
                     </div>
 
-                    {/* Tombol Aksi */}
                     <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
                         <button type="button" onClick={() => navigateTo('groups')} className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
                             Batal
