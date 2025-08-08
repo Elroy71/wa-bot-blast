@@ -1,0 +1,106 @@
+# ===============================================
+# PENGUJIAN API KONTAK (DATA PERSIAPAN)
+# ===============================================
+
+### A1. POST - Membuat kontak pertama (akan mendapatkan ID 1)
+# -> Kontak ini akan kita gunakan untuk grup
+POST http://localhost:3000/api/contacts
+Content-Type: application/json
+
+{
+    "name": "Budi Santoso Kedua",
+    "phone": "081234567834230",
+    "email": "budi.s@example.com",
+    "gender": "Pria"
+}
+
+
+### A2. POST - Membuat kontak kedua (akan mendapatkan ID 2)
+POST http://localhost:3000/api/contacts
+Content-Type: application/json
+
+{
+    "name": "Citra Lestari kedua",
+    "phone": "081211112222231",
+    "email": "citra.l@example.com",
+    "gender": "Wanita"
+}
+
+
+### A3. POST - Membuat kontak ketiga (akan mendapatkan ID 3)
+POST http://localhost:3000/api/contacts
+Content-Type: application/json
+
+{
+    "name": "Agus Wijaya",
+    "phone": "087755554444",
+    "email": "agus.w@example.com",
+    "gender": "Pria"
+}
+
+###
+
+@baseUrl = http://localhost:3000/api 
+@groupId = 10
+
+# PENGUJIAN API GROUP
+
+### 1. GET - mengambil semua grup
+# Saat dijlankan pertama kali akan menghasilkan array kosong.
+GET {{baseUrl}}/groups 
+Content-Type: application/json 
+
+
+### 2. POST - Membuat grup baru
+# Masih error
+POST {{baseUrl}}/groups
+Content-Type: application/json
+
+{
+    "name": "Tim Proyek Alpha",
+    "description": "Grup untuk koordinasi proyek internal Alpha.",
+    "members": [15, 16]
+}
+
+### 3. Mengambil semua grup (setelah membuat)
+GET {{baseUrl}}/groups 
+Content-Type: application/json
+
+
+### 4. GET mengambil detail grup berdasarkan ID
+# Menggunakan id 1
+GET {{baseUrl}}/groups/{{groupId}}
+Content-Type: application/json
+
+### 5. PUT memperbarui grup yang ada
+PUT http://localhost:3000/api/groups/{{groupId}}
+Content-Type: application/json 
+
+{
+    "name": "Tim Proyek Alpha (Updated)",
+    "description": "Deskripsi grup telah diperbarui.",
+    "members": [15, 17]
+}
+
+### 6. GET - Mengambil detail grup (setelah update)
+# -> Verifikasi bahwa data grup sudah berubah
+GET {{baseUrl}}/groups/{{groupId}}
+Content-Type: application/json
+
+
+### 7. DELETE - Menghapus grup
+# -> Menghapus grup yang sudah kita buat dan uji
+DELETE {{baseUrl}}/groups/{{groupId}}
+Content-Type: application/json
+
+
+### 8. GET - Mengambil semua grup (setelah hapus)
+# -> Verifikasi bahwa grup sudah tidak ada lagi di daftar
+GET {{baseUrl}}/groups
+Content-Type: application/json
+
+
+### 9. GET - Mencoba mengambil grup yang sudah dihapus
+# -> Harusnya mengembalikan error 404 Not Found
+GET {{baseUrl}}/groups/{{groupId}}
+Content-Type: application/json

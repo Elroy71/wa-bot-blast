@@ -1,0 +1,65 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// [PERUBAHAN] Enum baru untuk Gender
+enum Gender {
+  Pria
+  Wanita
+}
+
+// [PERUBAHAN] Model Contact
+model Contact {
+  id        Int           @id @default(autoincrement())
+  name      String
+  phone     String        @unique // Diubah dari phoneNumber
+  email     String?
+  gender    Gender?       // Ditambahkan, opsional
+
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  // [TAMBAHAN] Relasi many-to-many dengan Group
+  // Menandakan bahwa satu kontak bisa menjadi anggota banyak grup
+  groups    GroupMember[]
+}
+
+// Model untuk Group
+model Group {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // [PERUBAHAN] Relasi ke tabel perantara GroupMember
+  members     GroupMember[]
+}
+
+// [BARU] Model untuk tabel perantara (explicit many-to-many)
+model GroupMember {
+  // Relasi ke Group
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId   Int
+
+  // Relasi ke Contact
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId Int
+
+  // Informasi tambahan pada relasi
+  assignedAt DateTime @default(now())
+
+  // Membuat composite primary key untuk memastikan
+  // satu kontak hanya bisa masuk satu kali ke dalam grup yang sama.
+  @@id([groupId, contactId])
+}
+

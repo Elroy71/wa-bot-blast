@@ -1,0 +1,117 @@
+# Variabel untuk base URL.
+@baseUrl = http://localhost:3000/api 
+
+# Variable untuk menyimpan ID kontak yang baru dibuat
+@contactId = 1 
+
+###
+# 1. Create a new contact
+# mengirim permintaan untuk membuat satu kontak baru.
+POST {{baseUrl}}/contacts
+Content-Type: application/json 
+
+{
+    "name" : "Budi Santoso",
+    "phone" : "623456789",
+    "email" : "budi@example.com",
+    "gender" : "Pria"
+}
+
+###
+#2. Create another new contact
+# Membuat kontak kedua untuk pengujian.
+POST {{baseUrl}}/contacts
+Content-Type: application/json 
+
+{
+    "name" : "Siti Aminah",
+    "phone": "67012213842340",
+    "email": "siti.a@example.com",
+    "gender": "Wanita"
+}
+
+###
+#3. Get all contacts
+# mengambil semua kontak yang ada didatabase
+GET {{baseUrl}}/contacts
+
+### 
+#4. Get a single contact by ID
+# mengambil kontak dengan ID 1
+GET http://localhost:3000/api/contacts/1
+
+###
+#5. Update a contacts
+# memperbarui data kontak dengan ID 1
+PUT http://localhost:3000/api/contacts/1
+Content-Type: application/json
+
+{
+    "name": "Budi Santoso (Updated)",
+    "gender": "Wanita"
+}
+
+###
+#6. Import multiple contacts
+# mengirim array kontak untuk diimpor secara massal
+POST http://localhost:3000/api/contacts/import
+Content-Type: application/json
+
+[
+    {
+        "name": "Rudi Hartono",
+        "phone": "670122222222",
+        "email": "rudi@example.com",
+        "gender": "Pria"
+    },
+    {
+        "name": "Dewi Lestari",
+        "phone": "6282222222222",
+        "email": "dewi.l@example.com",
+        "gender": "Wanita"
+    },
+    {
+        "name": "Agus Setiawan",
+        "phone": "6283333333333"
+    },
+    {
+        "name": "Kontak Duplikat",
+        "phone": "6281234567890",
+        "gender": "Pria"
+    }
+]
+
+###
+# 7. Delete a contact
+# Menghapus kontak dengan ID 2
+DELETE http://localhost:3000/api/contacts/2 
+
+###
+# ----- Pengujian ERROR -----
+
+###
+# 8. ERROR: Create contact with mising required field
+# Mencoba membuat kontak tanpa "phone".
+POST {{baseUrl}}/contacts
+Content-Type: application/json 
+
+{
+    "name": "Gagal Tanpa Nomor"
+}
+
+###
+# 9. ERROR: Create contact with duplicate phone number
+# mencoba membuat kontak dengan nomor HP yang sudah ada
+POST {{baseUrl}}/contacts
+Content-Type: application/json
+
+{
+    "name": "Gagal Duplikat",
+    "phone": "670122222222"
+}
+
+###
+# 10. ERROR: Get contact with non-existent ID
+# Mencoba mengambil kontak dengan ID yang tidak ada
+
+GET http://localhost:3000/api/contacts/9999 
