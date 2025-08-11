@@ -51,3 +51,44 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 
 
 
+// backend/
+// ├── src/
+// │   ├── config/             # Konfigurasi app (DB, env, logger, dsb)
+// │   │   └── db.js
+// │
+// │   ├── controllers/        # Logika utama untuk masing-masing fitur
+// │   │   ├── contactController.js
+// │   │   ├── groupController.js
+// │   │   ├── blastController.js
+// │   │   └── senderController.js
+// │
+// │   ├── routes/             # Kumpulan endpoint API
+// │   │   ├── contactRoutes.js
+// │   │   ├── groupRoutes.js
+// │   │   ├── blastRoutes.js
+// │   │   └── senderRoutes.js
+// │
+// │   ├── models/             # Struktur data (pakai Mongoose atau Prisma)
+// │   │   ├── Contact.js
+// │   │   ├── Group.js
+// │   │   ├── Blast.js
+// │   │   └── Sender.js
+// │
+// │   ├── middlewares/        # Middleware: autentikasi, validasi, logging
+// │   │   ├── authMiddleware.js
+// │   │   └── errorHandler.js
+// │
+// │   ├── services/           # Layer bisnis: pengiriman pesan, AI agent
+// │   │   ├── waBlastService.js
+// │   │   ├── aiAgentService.js
+// │   │   └── contactService.js
+// │
+// │   ├── utils/              # Fungsi bantu umum (generate ID, dll)
+// │   │   └── helper.js
+// │
+// │   ├── app.js              # Setup express app, middleware, routes
+// │   └── server.js           # Start server, koneksi DB, log env
+// │
+// ├── .env                    # Environment variables
+// ├── package.json
+// └── README.md

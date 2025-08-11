@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; 
+
+import ContactsPage from './pages/ContactsPage'; // Sesuaikan path jika perlu
+import * as contactService from './services/contactService'; // Impor service kita
 
 // --- KOMPONEN LAYOUT (SEKARANG DIIMPOR DARI FILENYA MASING-MASING) ---
 import Sidebar from './components/layout/Sidebar';
@@ -21,7 +24,6 @@ import { SenderPage } from './pages/SenderPage';
 import { AiAgentsListPage } from './pages/AiAgentsListPage';
 import { AiAgentEditPage } from './pages/AiAgentEditPage';
 import { AiAgentCreatePage } from './pages/AiAgentCreatePage'; 
-import ContactsPage from './pages/ContactsPage';
 import BlastPage from './pages/BlastPage';
 import CreateBlastPage from './pages/CreateBlastPage';
 import BlastDetailPage from './pages/BlastDetailPage';
@@ -50,7 +52,7 @@ const getPageTitle = (pageId) => {
 
 
 // --- KOMPONEN UTAMA APLIKASI ---
-export default function App() {
+function App() {
     // State untuk navigasi dan tampilan UI
     const [currentView, setCurrentView] = useState({ page: 'dashboard', params: {} });
     const [isDesktopExpanded, setIsDesktopExpanded] = useState(true);
@@ -58,8 +60,34 @@ export default function App() {
 
     // State untuk data aplikasi
     const [groups, setGroups] = useState(initialGroupsData);
-    const [contacts, setContacts] = useState(initialContactsData);
     const [blasts, setBlasts] = useState(initialBlastsData);
+
+
+    const [contacts, setContacts] = useState([]);
+    const [loadingContacts, setLoadingContacts] = useState(true);
+    const [errorContacts, setErrorContacts] = useState(null);
+
+    // Fungsi untuk mengambil semua kontak dari backend
+    const fetchContacts = async () => {
+        try {
+            setLoadingContacts(true);
+            const response = await contactService.getContacts();
+            console.log("Data diterima dari API:", response.data);
+            setContacts(response.data); // Simpan data dari API ke state
+            setErrorContacts(null);
+        } catch (err) {
+            console.error("Gagal mengambil kontak:", err);
+            setErrorContacts("Tidak dapat memuat data kontak. Pastikan server backend berjalan.");
+        } finally {
+            setLoadingContacts(false);
+        }
+    };
+
+    // [PERBAIKAN 1] Tambahkan useEffect untuk memanggil fetchContacts
+    useEffect(() => {
+        // Fungsi ini akan dipanggil saat komponen App pertama kali dimuat
+        fetchContacts();
+    }, []); // Array kosong berarti "jalankan sekali saja"
 
     // Fungsi navigasi
     const navigateTo = (page, params = {}) => {
@@ -104,26 +132,51 @@ export default function App() {
             setBlasts(prev => prev.filter(blast => blast.id !== blastIdToDelete));
         }
     };
-    const handleAddContact = (newContactData) => {
-        const newContact = { ...newContactData, id: `contact-${Date.now()}` };
-        setContacts(prev => [newContact, ...prev]);
-        return newContact;
-    };
-    const handleUpdateContact = (contactId, updatedData) => {
-        setContacts(prev => prev.map(c => c.id === contactId ? { ...updatedData, id: contactId } : c));
-    };
-    const handleDeleteContact = (contactId) => {
-        if (window.confirm("Apakah Anda yakin ingin menghapus kontak ini?")) {
-            setContacts(prev => prev.filter(c => c.id !== contactId));
+    // Handler untuk menambah kontak baru
+    const handleAddContact = async (formData) => {
+        try {
+            await contactService.createContact(formData);
+            fetchContacts(); // Ambil ulang daftar kontak agar data terbaru muncul
+        } catch (err) {
+            console.error("Gagal menambah kontak:", err);
+            alert("Gagal menyimpan kontak. Periksa kembali data Anda.");
         }
     };
-    const handleImportContacts = (importedContacts) => {
-        const newContacts = importedContacts.map((contact, index) => ({
-            ...contact,
-            id: `imported-${Date.now()}-${index}`,
-        }));
-        setContacts(prev => [...prev, ...newContacts]);
-        alert(`${newContacts.length} kontak berhasil diimpor!`);
+    // Handler untuk mengupdate kontak
+    const handleUpdateContact = async (id, formData) => {
+        try {
+            await contactService.updateContact(id, formData);
+            fetchContacts(); // Ambil ulang daftar kontak
+        } catch (err) {
+            console.error("Gagal mengupdate kontak:", err);
+            alert("Gagal mengupdate kontak.");
+        }
+    };
+
+    // Handler untuk menghapus kontak
+    const handleDeleteContact = async (id) => {
+        // Konfirmasi sebelum menghapus
+        if (window.confirm('Apakah Anda yakin ingin menghapus kontak ini?')) {
+        try {
+            await contactService.deleteContact(id);
+            fetchContacts(); // Ambil ulang daftar kontak
+        } catch (err) {
+            console.error("Gagal menghapus kontak:", err);
+            alert("Gagal menghapus kontak.");
+        }
+        }
+    };
+
+    // Handler untuk import kontak dari Excel
+    const handleImportContacts = async (newContacts) => {
+        try {
+            const response = await contactService.importContacts(newContacts);
+            alert(response.data.message); // Tampilkan pesan sukses dari backend
+            fetchContacts(); // Ambil ulang daftar kontak
+        } catch (err) {
+            console.error("Gagal mengimpor kontak:", err);
+            alert("Gagal mengimpor kontak. Pastikan format file benar.");
+        }
     };
 
     // --- RENDER HALAMAN BERDASARKAN STATE ---
@@ -170,9 +223,21 @@ export default function App() {
                     title={getPageTitle(currentView.page)}
                 />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-4 sm:p-6 md:p-8">
-                    {renderPage()}
+                    {/* [MODIFIKASI] Menambahkan penanganan Loading dan Error di sini.
+                        Ini akan menampilkan pesan yang sesuai saat data kontak sedang diambil atau jika terjadi error,
+                        sebelum merender halaman apa pun. Ini adalah UX yang lebih baik.
+                    */}
+                    {loadingContacts && currentView.page === 'contacts' ? (
+                        <p className="text-center text-gray-500">Memuat data kontak...</p>
+                    ) : errorContacts ? (
+                        <p className="text-center text-red-500 bg-red-100 p-4 rounded-lg">{errorContacts}</p>
+                    ) : (
+                        renderPage() // Hanya render halaman jika tidak ada loading atau error.
+                    )}
                 </main>
             </div>
         </div>
     );
 }
+
+export default App;
