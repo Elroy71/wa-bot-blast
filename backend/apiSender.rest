@@ -1,0 +1,105 @@
+### File untuk pengujian API whatsapp sender
+# variable ini digunakan di semua request dibawah 
+@baseUrl = http://localhost:3000
+@api = {{ baseUrl }}/api/senders
+@senderId = 6
+# ID akan diisi otomatis dari hasil 'create sender'
+
+###
+# 1. GET all senders 
+GET {{api}}
+Accept: application/json
+
+###
+# 2. Create Sender 
+POST {{api}}
+Content-Type: application/json
+
+{
+    "name": "CS Marketing",
+    "phone": "6281234567890"
+}
+
+###
+# 3. UPDATE Sender name 
+PUT http://localhost:3000/api/senders/{{senderId}}
+Content-Type: application/json 
+
+{
+    "name": "CS Marketing (Updated 2)"
+}
+
+
+###
+# 4. UPDATE sender status (to paired)
+PUT {{api}}/{{senderId}}/status
+Content-Type: application/json 
+
+{
+    "status": "paired"
+}
+
+###
+# 5. GENERATE QR CODE 
+GET {{api}}/{{senderId}}/qr
+Accept: application/json 
+
+### 
+# 6. UPDATE SENDER STATUS (to Unpaired)
+PUT {{api}}/{{senderId}}/status
+Content-Type: application/json 
+
+{
+    "status": "unpaired"
+}
+
+###
+# 7. DELETE SENDER 
+DELETE http://localhost:3000/api/senders/{{senderId}}
+
+###
+# 8. CREATE SENDER WITH duplicate phone
+POST {{api}}
+Content-Type: application/json 
+
+{
+    "name": "CS Gudang",
+    "phone": "6281234567890"
+}
+
+###
+# 9. Create new sender
+POST http://localhost:3000/api/senders
+Content-Type: application/json 
+
+{
+    "name": "Elia Testing",
+    "phone": "612394348"
+}
+###
+# 10. Create new sender
+POST http://localhost:3000/api/senders
+Content-Type: application/json 
+
+{
+    "name": "Elia Testing kedua",
+    "phone": "234612394348"
+}
+###
+# 11. Create new sender
+POST http://localhost:3000/api/senders
+Content-Type: application/json 
+
+{
+    "name": "Elia Testing ketiga",
+    "phone": "2346123943481"
+}
+###
+# 12. Create new sender
+POST http://localhost:3000/api/senders
+Content-Type: application/json 
+
+{
+    "name": "Elia Testing keempat",
+    "phone": "23463123943481"
+}

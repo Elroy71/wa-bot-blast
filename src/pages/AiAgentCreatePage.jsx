@@ -2,21 +2,38 @@ import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import AiAgentForm from '../components/AiAgentForm';
 
+const API_URL = 'http://localhost:3000/api';
+
 export const AiAgentCreatePage = ({ navigateTo }) => {
     
-    const handleAddAgent = (newAgentData) => {
-        const storedAgents = JSON.parse(localStorage.getItem('blastbot_agents')) || [];
-        const newAgent = { 
-            ...newAgentData, 
-            id: `agent_${Date.now()}`,
-            files: newAgentData.files || [],
-            knowledgeBases: (newAgentData.knowledgeBases || []).map(kb => ({...kb, createdAt: kb.createdAt || new Date().toISOString().split('T')[0]}))
-        };
-        const newAgents = [newAgent, ...storedAgents];
-        localStorage.setItem('blastbot_agents', JSON.stringify(newAgents));
+    const handleAddAgent = async (newAgentData) => {
+        try {
+            // Data yang dikirim ke backend disesuaikan dengan skema
+            const payload = {
+                name: newAgentData.name,
+                company: newAgentData.company,
+                languageStyle: newAgentData.languageStyle,
+                behavior: newAgentData.behavior,
+                status: newAgentData.status, // Frontend mengirim "Aktif" atau "Nonaktif"
+            };
 
-        alert('Agent baru berhasil dibuat!');
-        navigateTo('aiAgentsList');
+            const response = await fetch(`${API_URL}/agents`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || 'Gagal membuat agent baru.');
+            }
+
+            alert('Agent baru berhasil dibuat!');
+            navigateTo('aiAgentsList');
+
+        } catch (error) {
+            alert(`Terjadi kesalahan: ${error.message}`);
+        }
     };
 
     return (

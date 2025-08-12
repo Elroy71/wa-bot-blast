@@ -63,3 +63,98 @@ model GroupMember {
   @@id([groupId, contactId])
 }
 
+
+// Model untuk whatsapp sender
+model WhatsappSender {
+  id               Int          @id @default(autoincrement())
+  name            String
+  phone           String        @unique
+  status          SenderStatus  @default(unpaired)
+  aiAgentId       String?       @unique //Relasi one to one dengan AI Agent 
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relasi one-to-one ke AiAgent
+  // Penambahan @relation untuk membuat link dua arah yang eksplisit
+  aiAgent   AiAgent?  @relation("SenderToAgent")
+}
+
+// Enum untuk status sender
+enum SenderStatus {
+  paired
+  unpaired
+}
+
+
+// Model untuk AI Agent
+model AiAgent {
+  id            Int       @id @default(autoincrement())
+  name          String
+  company       String?
+  languageStyle LanguageStyle @default(Santai)
+  behavior      String    @db.Text
+  status        AgentStatus  @default(inactive)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relasi one-to-one dengan WhatsappSender
+  senderId      Int?      @unique
+  connectedSender WhatsappSender? @relation("SenderToAgent", fields: [senderId], references: [id])
+
+  // Relasi one-to-many ke Knowledge Base
+  knowledge     AiKnowledge[]
+
+  // Relasi one-to-many ke Test Conversations
+  testConversations AiTestConversation[]
+}
+// --- ENUMS ---
+enum AgentStatus {
+  active
+  inactive
+}
+// Enum disesuaikan dengan Frontend (Bahasa Indonesia)
+enum LanguageStyle {
+  Formal
+  Profesional
+  Santai
+  Humoris
+  Percakapan_sehari_hari
+}
+
+
+
+// Model untuk Knowledge Base milik AI Agent
+model AiKnowledge {
+  id          Int            @id @default(autoincrement())
+  aiAgentId   Int
+  title       String
+  category    KnowledgeCategory @default(Panduan)
+  contentText String         @db.Text
+  filePdf     String?        // Path ke file PDF yang di-upload
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // Relasi: Knowledge ini milik satu AI Agent
+  aiAgent     AiAgent        @relation(fields: [aiAgentId], references: [id], onDelete: Cascade)
+}
+// Enum (Bahasa Indonesia)
+enum KnowledgeCategory {
+  Panduan
+  Layanan
+  Produk
+  Best_Practice
+  Tips_Trik
+}
+
+// Model untuk menyimpan riwayat percakapan tes
+model AiTestConversation {
+  id          Int      @id @default(autoincrement())
+  aiAgentId   Int
+  userMessage String   @db.Text
+  aiResponse  String   @db.Text
+  createdAt   DateTime @default(now())
+
+  // Relasi: Percakapan ini milik satu AI Agent
+  aiAgent     AiAgent  @relation(fields: [aiAgentId], references: [id], onDelete: Cascade)
+}
+

@@ -1,59 +1,81 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { PlusCircle, BrainCircuit, ArrowLeft, MoreVertical, Edit, Link as LinkIcon, Trash2, XCircle } from 'lucide-react';
 import Modal from '../components/common/Modal';
-import { mockData } from '../data/mockData'; // Hanya untuk inisialisasi awal
+
+const API_URL = 'http://localhost:3000/api';
 
 export const AiAgentsListPage = ({ navigateTo }) => {
-    // State lokal untuk halaman ini
     const [agents, setAgents] = useState([]);
     const [senders, setSenders] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     const [openMenuId, setOpenMenuId] = useState(null);
     const [agentToConnect, setAgentToConnect] = useState(null);
 
-    // useEffect untuk memuat data dari localStorage saat komponen pertama kali dimuat
-    useEffect(() => {
-        let storedAgents = JSON.parse(localStorage.getItem('blastbot_agents'));
-        if (!storedAgents) {
-            storedAgents = mockData.aiAgents;
-            localStorage.setItem('blastbot_agents', JSON.stringify(storedAgents));
-        }
-        setAgents(storedAgents);
+    // Fungsi untuk memuat data dari API
+    const fetchData = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const [agentsRes, sendersRes] = await Promise.all([
+                fetch(`${API_URL}/agents`),
+                fetch(`${API_URL}/senders`)
+            ]);
 
-        let storedSenders = JSON.parse(localStorage.getItem('blastbot_senders'));
-        if (!storedSenders) {
-            storedSenders = mockData.senders;
-            localStorage.setItem('blastbot_senders', JSON.stringify(storedSenders));
+            if (!agentsRes.ok || !sendersRes.ok) {
+                throw new Error('Gagal memuat data dari server.');
+            }
+
+            const agentsData = await agentsRes.json();
+            const sendersData = await sendersRes.json();
+
+            setAgents(agentsData);
+            setSenders(sendersData);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
         }
-        setSenders(storedSenders);
     }, []);
 
-    // Fungsi untuk menyimpan perubahan ke localStorage dan state
-    const updateData = (newAgents, newSenders) => {
-        localStorage.setItem('blastbot_agents', JSON.stringify(newAgents));
-        localStorage.setItem('blastbot_senders', JSON.stringify(newSenders));
-        setAgents(newAgents);
-        setSenders(newSenders);
-    };
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
-    const handleDeleteAgent = (agentIdToDelete) => {
-        if (window.confirm("Apakah Anda yakin ingin menghapus agent ini? Semua koneksi ke sender akan terputus.")) {
-            const newAgents = agents.filter(agent => agent.id !== agentIdToDelete);
-            const newSenders = senders.map(sender => 
-                sender.aiAgentId === agentIdToDelete ? { ...sender, aiAgentId: null } : sender
-            );
-            updateData(newAgents, newSenders);
+    const handleDeleteAgent = async (agentIdToDelete) => {
+        if (window.confirm("Apakah Anda yakin ingin menghapus agent ini? Semua data terkait akan hilang.")) {
+            try {
+                const response = await fetch(`${API_URL}/agents/${agentIdToDelete}`, {
+                    method: 'DELETE',
+                });
+                if (!response.ok) {
+                    throw new Error('Gagal menghapus agent.');
+                }
+                // Refresh data setelah berhasil
+                fetchData();
+                alert('Agent berhasil dihapus.');
+            } catch (err) {
+                alert(err.message);
+            }
         }
     };
     
-    const handleDisconnectAgent = (agentIdToDisconnect) => {
+    const handleDisconnectAgent = async (agentIdToDisconnect) => {
         if (window.confirm("Anda yakin ingin memutuskan koneksi device?")) {
-            const newSenders = senders.map(sender => 
-                sender.aiAgentId === agentIdToDisconnect ? { ...sender, aiAgentId: null } : sender
-            );
-            // Hanya senders yang berubah, agents tetap
-            updateData(agents, newSenders);
-            alert('Koneksi berhasil diputuskan.');
+            try {
+                const response = await fetch(`${API_URL}/agents/${agentIdToDisconnect}/disconnect`, {
+                    method: 'POST',
+                });
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.error || 'Gagal memutuskan koneksi.');
+                }
+                fetchData();
+                alert('Koneksi berhasil diputuskan.');
+            } catch (err) {
+                alert(err.message);
+            }
         }
     };
 
@@ -68,18 +90,31 @@ export const AiAgentsListPage = ({ navigateTo }) => {
         }
     };
     
-    const handleConnectAgent = (agentId, senderId) => {
+    const handleConnectAgent = async (agentId, senderId) => {
         if (!senderId) {
             alert("Silakan pilih sender terlebih dahulu.");
             return;
         }
-        const newSenders = senders.map(sender => 
-            sender.id === senderId ? { ...sender, aiAgentId: agentId } : sender
-        );
-        updateData(agents, newSenders);
-        setAgentToConnect(null);
-        alert('Agent berhasil terhubung ke sender!');
+        try {
+            const response = await fetch(`${API_URL}/agents/${agentId}/connect`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ senderId: parseInt(senderId) }),
+            });
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || 'Gagal menghubungkan agent.');
+            }
+            fetchData();
+            setAgentToConnect(null);
+            alert('Agent berhasil terhubung ke sender!');
+        } catch (err) {
+            alert(err.message);
+        }
     };
+
+    if (loading) return <div className="text-center p-10">Memuat data AI Agents...</div>;
+    if (error) return <div className="text-center p-10 text-red-600">Error: {error}</div>;
 
     return (
         <div>
@@ -97,54 +132,52 @@ export const AiAgentsListPage = ({ navigateTo }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {agents.map(agent => {
-                    const connectedSender = senders.find(s => s.aiAgentId === agent.id);
-
-                    return (
-                        <div key={agent.id} className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow flex flex-col justify-between">
-                            <div>
-                                <div className="flex justify-between items-start">
-                                    <BrainCircuit className="text-indigo-500" size={32} />
-                                    <div className="relative">
-                                        <button onClick={() => setOpenMenuId(openMenuId === agent.id ? null : agent.id)} className="p-2 rounded-full hover:bg-gray-200">
-                                            <MoreVertical size={20} />
-                                        </button>
-                                        {openMenuId === agent.id && (
-                                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border">
-                                                <a href="#" onClick={(e) => { e.preventDefault(); handleActionClick('edit', agent.id) }} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                    <Edit size={16} className="mr-3" /> Edit / Kelola
-                                                </a>
-                                                <a href="#" onClick={(e) => { e.preventDefault(); handleActionClick('disconnect', agent.id) }} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                    <XCircle size={16} className="mr-3" /> Putuskan Device
-                                                </a>
-                                                <a href="#" onClick={(e) => { e.preventDefault(); handleActionClick('delete', agent.id) }} className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                                                    <Trash2 size={16} className="mr-3" /> Hapus
-                                                </a>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                                <h4 className="text-lg font-bold text-gray-800 mt-4">{agent.name}</h4>
-                                <p className="text-sm text-gray-500 mt-1">Perusahaan: {agent.company}</p>
-                            </div>
-
-                            <div className="mt-6 pt-4 border-t border-gray-200">
-                                {connectedSender ? (
-                                    <div className="flex items-center gap-2">
-                                        <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-1 rounded-full">Terhubung</span>
-                                        <p className="text-sm text-gray-600 font-medium">{connectedSender.name}</p>
-                                    </div>
-                                ) : (
-                                    <button onClick={() => setAgentToConnect(agent)} className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-800">
-                                        <LinkIcon size={16}/>
-                                        Hubungkan
+                {agents.map(agent => (
+                    <div key={agent.id} className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow flex flex-col justify-between">
+                        <div>
+                            <div className="flex justify-between items-start">
+                                <BrainCircuit className="text-indigo-500" size={32} />
+                                <div className="relative">
+                                    <button onClick={() => setOpenMenuId(openMenuId === agent.id ? null : agent.id)} className="p-2 rounded-full hover:bg-gray-200">
+                                        <MoreVertical size={20} />
                                     </button>
-                                )}
+                                    {openMenuId === agent.id && (
+                                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border">
+                                            <a href="#" onClick={(e) => { e.preventDefault(); handleActionClick('edit', agent.id) }} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                <Edit size={16} className="mr-3" /> Edit / Kelola
+                                            </a>
+                                            {agent.connectedSender && (
+                                              <a href="#" onClick={(e) => { e.preventDefault(); handleActionClick('disconnect', agent.id) }} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                  <XCircle size={16} className="mr-3" /> Putuskan Device
+                                              </a>
+                                            )}
+                                            <a href="#" onClick={(e) => { e.preventDefault(); handleActionClick('delete', agent.id) }} className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                                <Trash2 size={16} className="mr-3" /> Hapus
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
+                            <h4 className="text-lg font-bold text-gray-800 mt-4">{agent.name}</h4>
+                            <p className="text-sm text-gray-500 mt-1">Perusahaan: {agent.company || '-'}</p>
                         </div>
-                    );
-                })}
-                 {agents.length === 0 && (
+
+                        <div className="mt-6 pt-4 border-t border-gray-200">
+                            {agent.connectedSender ? (
+                                <div className="flex items-center gap-2">
+                                    <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-1 rounded-full">Terhubung</span>
+                                    <p className="text-sm text-gray-600 font-medium">{agent.connectedSender.name}</p>
+                                </div>
+                            ) : (
+                                <button onClick={() => setAgentToConnect(agent)} className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-800">
+                                    <LinkIcon size={16}/>
+                                    Hubungkan
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                ))}
+                {agents.length === 0 && (
                     <div className="col-span-1 md:col-span-2 lg:col-span-3 text-center py-16 bg-white rounded-xl shadow-md">
                         <p className="text-gray-500">Belum ada AI Agent.</p>
                         <p className="text-gray-400 text-sm mt-2">Klik "Tambah AI Agent" untuk membuat yang baru.</p>
@@ -170,7 +203,8 @@ export const AiAgentsListPage = ({ navigateTo }) => {
                             className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                         >
                             <option value="">-- Pilih Sender --</option>
-                            {senders.filter(s => !s.aiAgentId).map(sender => (
+                            {/* Hanya tampilkan sender yang belum terhubung (status unpaired) */}
+                            {senders.filter(s => s.status === 'unpaired').map(sender => (
                                 <option key={sender.id} value={sender.id}>
                                     {sender.name} ({sender.phone})
                                 </option>

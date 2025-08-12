@@ -1,0 +1,103 @@
+# Variabel untuk menyimpan ID agent yang baru dibuat
+@agentId = 1
+@baseUrl = http://localhost:3000/api/agents
+
+###
+# =======================================================
+# 1. CREATE a new AiAgent
+# =======================================================
+
+# 1.1 (SUCCESS) Membuat agent baru dengan data yang valid
+# @name createdAgent akan menyimpan response dari request ini
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+    "name": "Bot CS Toko Online",
+    "company": "Toko Maju Jaya",
+    "languageStyle": "Santai",
+    "behavior": "Jawab pertanyaan pelanggan seputar produk dan pengiriman. Selalu ramah dan sopan.",
+    "status": "Aktif"
+}
+
+###
+# Simpan ID dari agent yang baru dibuat ke variabel @agentId
+# @agentId = {{createdAgent.response.body.id}}
+@agentId = 1
+# Cetak ID untuk verifikasi
+# @prompt agentId
+
+###
+# 1.2 (FAILURE) Mencoba membuat agent tanpa 'name'
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+    "company": "Toko Gagal",
+    "behavior": "Ini tidak akan berhasil.",
+    "status": "Nonaktif"
+}
+
+
+###
+# =======================================================
+# 2. READ all AiAgents
+# =======================================================
+
+# 2.1 (SUCCESS) Mendapatkan semua agent yang ada
+GET {{baseUrl}}
+
+
+###
+# =======================================================
+# 3. READ a single AiAgent by ID
+# =======================================================
+
+# 3.1 (SUCCESS) Mendapatkan agent dengan ID yang tersimpan di @agentId
+GET {{baseUrl}}/{{agentId}}
+
+###
+# 3.2 (FAILURE) Mencoba mendapatkan agent dengan ID yang tidak ada
+GET {{baseUrl}}/9999
+
+
+###
+# =======================================================
+# 4. UPDATE an existing AiAgent
+# =======================================================
+
+# 4.1 (SUCCESS) Memperbarui agent dengan ID yang tersimpan di @agentId
+PUT {{baseUrl}}/{{agentId}}
+Content-Type: application/json
+
+{
+    "name": "Bot CS Toko Online (UPDATED)",
+    "company": "Toko Maju Jaya Sejahtera",
+    "languageStyle": "Humoris",
+    "behavior": "Jawab semua pertanyaan dengan sedikit candaan, tapi tetap informatif.",
+    "status": "Nonaktif"
+}
+
+###
+# 4.2 (FAILURE) Mencoba memperbarui agent dengan ID yang tidak ada
+PUT {{baseUrl}}/9999
+Content-Type: application/json
+
+{
+    "name": "Bot Hantu",
+    "status": "Aktif"
+}
+
+
+###
+# =======================================================
+# 5. DELETE an AiAgent
+# =======================================================
+
+# 5.1 (SUCCESS) Menghapus agent dengan ID yang tersimpan di @agentId
+DELETE {{baseUrl}}/{{agentId}}
+
+###
+# 5.2 (FAILURE) Mencoba menghapus agent dengan ID yang tidak ada
+DELETE {{baseUrl}}/9999
+

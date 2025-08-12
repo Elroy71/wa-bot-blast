@@ -1,0 +1,130 @@
+# Variabel global untuk pengujian Knowledge Base
+@baseUrl = http://localhost:3000/api/agents
+@testAgentId =
+@knowledgeId =
+
+###
+# =======================================================
+# SETUP: Buat AI Agent baru untuk pengujian
+# =======================================================
+
+# @name createTestAgent
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+    "name": "Agent Pengetahuan",
+    "company": "Perpustakaan Digital",
+    "languageStyle": "Formal",
+    "behavior": "Saya adalah agent yang memiliki banyak pengetahuan dari dokumen.",
+    "status": "Aktif"
+}
+
+###
+# Simpan ID Agent yang baru dibuat
+@testAgentId = {{createTestAgent.response.body.id}}
+
+
+###
+# =======================================================
+# 1. ADD Knowledge Base (dengan file PDF)
+# =======================================================
+# Menggunakan multipart/form-data untuk mengirim teks dan file
+# PASTIKAN Anda sudah membuat file 'test.pdf' di root folder proyek Anda.
+
+# @name addKnowledgeWithFile
+POST {{baseUrl}}/{{testAgentId}}/knowledge
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="title"
+
+Panduan Penggunaan Produk v1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="category"
+
+Panduan
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="contentText"
+
+Berikut adalah panduan lengkap untuk menggunakan produk kami. Silakan lihat dokumen PDF terlampir untuk detail visual dan langkah-langkahnya.
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="filePdf"; filename="test.pdf"
+Content-Type: application/pdf
+
+< ./test.pdf
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###
+# Simpan ID Knowledge yang baru dibuat
+@knowledgeId = {{addKnowledgeWithFile.response.body.id}}
+
+
+###
+# =======================================================
+# 2. ADD Knowledge Base (tanpa file)
+# =======================================================
+
+POST {{baseUrl}}/{{testAgentId}}/knowledge
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="title"
+
+Tips & Trik Marketing
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="category"
+
+Tips_Trik
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="contentText"
+
+Ini adalah beberapa tips marketing tanpa dokumen pendukung.
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+
+###
+# =======================================================
+# 3. VERIFY: Cek apakah knowledge sudah ditambahkan ke agent
+# =======================================================
+
+GET {{baseUrl}}/{{testAgentId}}
+
+
+###
+# =======================================================
+# 4. UPDATE Knowledge Base
+# =======================================================
+# Memperbarui data teks dari knowledge yang pertama kali dibuat
+
+PUT {{baseUrl}}/{{testAgentId}}/knowledge/{{knowledgeId}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="title"
+
+Panduan Penggunaan Produk v2 (UPDATED)
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="category"
+
+Best_Practice
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="contentText"
+
+Konten telah diperbarui. Versi 2 lebih lengkap.
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+
+###
+# =======================================================
+# 5. DELETE Knowledge Base
+# =======================================================
+# Menghapus knowledge yang pertama kali dibuat (yang ada file PDF-nya)
+
+DELETE {{baseUrl}}/{{testAgentId}}/knowledge/{{knowledgeId}}
+
+###
+# (VERIFY) Cek kembali agent, pastikan knowledge sudah terhapus.
+# Juga, cek folder /public/uploads, file PDF seharusnya sudah ikut terhapus.
+GET {{baseUrl}}/{{testAgentId}}
+

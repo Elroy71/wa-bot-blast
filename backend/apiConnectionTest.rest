@@ -1,0 +1,99 @@
+# Variabel global untuk pengujian koneksi
+@baseUrl = http://localhost:3000/api
+@agentIdForConnection = 5
+@senderIdForConnection =6
+
+###
+GET http://localhost:3000/api/senders 
+Connection: application/json
+###
+GET http://localhost:3000/api/agents
+
+
+###
+# =======================================================
+# SETUP: Buat data dummy untuk pengujian
+# =======================================================
+
+# 1. Buat sebuah Whatsapp Sender baru untuk dihubungkan
+POST {{baseUrl}}/senders
+Content-Type: application/json
+
+{
+    "name": "Nomor Bisnis Utama",
+    "phone": "628123456724890"
+}
+
+###
+# 2. Buat sebuah AI Agent baru untuk dihubungkan
+POST {{baseUrl}}/agents
+Content-Type: application/json
+
+{
+    "name": "Agent Khusus Koneksi (Testing)",
+    "company": "PT Uji Coba",
+    "languageStyle": "Formal",
+    "behavior": "Agent ini digunakan untuk testing koneksi.",
+    "status": "Aktif"
+}
+
+
+###
+# =======================================================
+# PENGUJIAN KONEKSI (CONNECT)
+# =======================================================
+
+# 3. (SUCCESS) Hubungkan Agent ke Sender
+POST {{baseUrl}}/agents/{{agentIdForConnection}}/connect
+Content-Type: application/json
+
+{
+    "senderId": {{senderIdForConnection}}
+}
+
+###
+# 4. (VERIFY) Cek status Agent, pastikan 'connectedSender' ada datanya
+GET {{baseUrl}}/agents/{{agentIdForConnection}}
+
+###
+# 5. (VERIFY) Cek status Sender, pastikan statusnya 'paired'
+GET {{baseUrl}}/senders/{{senderIdForConnection}}
+
+###
+# 6. (FAILURE) Coba hubungkan agent lain ke sender yang sama (seharusnya gagal)
+POST {{baseUrl}}/agents
+Content-Type: application/json
+
+{ 
+    "name": "Agent Kedua", 
+    "behavior": "test", 
+    "status": "Aktif" 
+}
+
+@anotherAgentId = 4
+###
+POST {{baseUrl}}/agents/{{anotherAgentId}}/connect
+Content-Type: application/json
+{ "senderId": {{senderIdForConnection}} }
+
+
+###
+# =======================================================
+# PENGUJIAN PEMUTUSAN KONEKSI (DISCONNECT)
+# =======================================================
+
+# 7. (SUCCESS) Putuskan koneksi Agent dari Sender
+POST {{baseUrl}}/agents/{{agentIdForConnection}}/disconnect
+
+###
+# 8. (VERIFY) Cek status Agent, 'connectedSender' seharusnya null
+GET {{baseUrl}}/agents/{{agentIdForConnection}}
+
+###
+# 9. (VERIFY) Cek status Sender, statusnya seharusnya kembali 'unpaired'
+GET {{baseUrl}}/senders/{{senderIdForConnection}}
+
+###
+# 10. (FAILURE) Coba putuskan koneksi lagi (seharusnya gagal karena sudah terputus)
+POST {{baseUrl}}/agents/{{agentIdForConnection}}/disconnect
+

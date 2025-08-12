@@ -1,0 +1,89 @@
+# Variabel global untuk pengujian Chat
+@baseUrl = http://localhost:3000/api/agents
+@chatAgentId =
+
+###
+# =======================================================
+# SETUP: Buat Agent dan Knowledge Base
+# =======================================================
+
+# 1. Buat Agent baru
+# @name createChatAgent
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+    "name": "Bot Teknisi Komputer",
+    "company": "Servis Cepat",
+    "languageStyle": "Profesional",
+    "behavior": "Saya adalah teknisi ahli yang membantu masalah komputer. Saya hanya menjawab berdasarkan panduan yang diberikan.",
+    "status": "Aktif"
+}
+
+###
+# Simpan ID Agent
+@chatAgentId = {{createChatAgent.response.body.id}}
+
+###
+# 2. Tambahkan Knowledge Base dengan PDF
+# PASTIKAN file 'test.pdf' berisi teks seperti "Untuk mereset password, tekan tombol Ctrl+Alt+Del."
+POST {{baseUrl}}/{{chatAgentId}}/knowledge
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="title"
+
+Panduan Reset Password
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="category"
+
+Panduan
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="contentText"
+
+Ini adalah panduan untuk mereset password pada sistem operasi Windows.
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="filePdf"; filename="test.pdf"
+Content-Type: application/pdf
+
+< ./test.pdf
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+
+###
+# =======================================================
+# PENGUJIAN CHAT
+# =======================================================
+
+# 3. (SUCCESS) Ajukan pertanyaan yang jawabannya ada di dalam PDF
+POST {{baseUrl}}/{{chatAgentId}}/test-chat
+Content-Type: application/json
+
+{
+    "userInput": "Apa saja yg bisa saya tanyakan pada anda?",
+    "conversationHistory": []
+}
+
+###
+# 4. (SUCCESS) Ajukan pertanyaan yang jawabannya TIDAK ada di konteks
+POST {{baseUrl}}/{{chatAgentId}}/test-chat
+Content-Type: application/json
+
+{
+    "userInput": "Berapa harga saham Apple hari ini?",
+    "conversationHistory": []
+}
+
+###
+# 5. (SUCCESS) Uji percakapan berlanjut (dengan history)
+POST {{baseUrl}}/{{chatAgentId}}/test-chat
+Content-Type: application/json
+
+{
+    "userInput": "Terima kasih atas informasinya!",
+    "conversationHistory": [
+        { "role": "user", "content": "Bagaimana cara saya mereset password?" },
+        { "role": "assistant", "content": "Untuk mereset password, Anda bisa menekan tombol Ctrl+Alt+Del." }
+    ]
+}
+

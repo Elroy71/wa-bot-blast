@@ -1,40 +1,82 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import AiAgentForm from '../components/AiAgentForm';
-import { mockData } from '../data/mockData'; // Untuk fallback jika localStorage kosong
+
+const API_URL = 'http://localhost:3000/api';
 
 export const AiAgentEditPage = ({ navigateTo, params }) => {
     const [agent, setAgent] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        let storedAgents = JSON.parse(localStorage.getItem('blastbot_agents'));
-        if (!storedAgents) {
-            storedAgents = mockData.aiAgents;
-            localStorage.setItem('blastbot_agents', JSON.stringify(storedAgents));
-        }
-        const agentToEdit = storedAgents.find(a => a.id === params.aiAgentId);
-        if (agentToEdit) {
-            setAgent(agentToEdit);
+        const fetchAgentData = async () => {
+            try {
+                setLoading(true);
+                const response = await fetch(`${API_URL}/agents/${params.aiAgentId}`);
+                if (!response.ok) {
+                    throw new Error('Gagal memuat data agent.');
+                }
+                const data = await response.json();
+                
+                // Map status dari backend ('active') ke frontend ('Aktif')
+                const formattedData = {
+                    ...data,
+                    status: data.status === 'active' ? 'Aktif' : 'Nonaktif',
+                    // Ganti nama field agar sesuai dengan form
+                    knowledgeBases: data.knowledge || [], 
+                };
+                setAgent(formattedData);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (params.aiAgentId) {
+            fetchAgentData();
         }
     }, [params.aiAgentId]);
     
-    const handleUpdateAgent = (updatedAgentData) => {
-        const storedAgents = JSON.parse(localStorage.getItem('blastbot_agents')) || [];
-        const newAgents = storedAgents.map(a => 
-            a.id === updatedAgentData.id ? updatedAgentData : a
-        );
-        localStorage.setItem('blastbot_agents', JSON.stringify(newAgents));
-        
-        alert('Perubahan berhasil disimpan!');
-        navigateTo('aiAgentsList');
+    // Fungsi ini hanya mengupdate data dasar agent
+    const handleUpdateAgent = async (updatedAgentData) => {
+        try {
+            const payload = {
+                name: updatedAgentData.name,
+                company: updatedAgentData.company,
+                languageStyle: updatedAgentData.languageStyle,
+                behavior: updatedAgentData.behavior,
+                status: updatedAgentData.status,
+            };
+
+            const response = await fetch(`${API_URL}/agents/${updatedAgentData.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || 'Gagal menyimpan perubahan.');
+            }
+            
+            alert('Perubahan berhasil disimpan!');
+            navigateTo('aiAgentsList');
+
+        } catch (error) {
+            alert(`Terjadi kesalahan: ${error.message}`);
+        }
     };
 
+    if (loading) {
+        return <div className="text-center p-10">Memuat data agent...</div>;
+    }
+    if (error) {
+        return <div className="text-center p-10 text-red-600">Error: {error}</div>;
+    }
     if (!agent) {
-        return (
-            <div className="text-center p-10">
-                <p>Memuat data agent...</p>
-            </div>
-        );
+        return <div className="text-center p-10">Agent tidak ditemukan.</div>;
     }
 
     return (
