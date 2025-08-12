@@ -10,12 +10,18 @@ const asyncHandler = fn => (req, res, next) => {
 // Mengambil semua sender dari database
 exports.getAllSenders = asyncHandler(async (req, res, next) => {
     const senders = await prisma.whatsappSender.findMany({
+        // [PERBAIKAN UTAMA DI SINI]
+        // Tambahkan 'include' untuk menyertakan data relasi 'aiAgent'
+        include: {
+            aiAgent: true,
+        },
         orderBy: {
             createdAt: 'desc', // Data terbaru di atas
         },
     });
     res.status(200).json(senders);
 });
+
 
 // Fungsi untuk mendapatkan satu sender berdasarkan ID
 exports.getSenderById = asyncHandler(async(req, res, next) => {

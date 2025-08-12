@@ -1,10 +1,13 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { PlusCircle, Search, BrainCircuit, Link as LinkIcon } from 'lucide-react';
-// Impor fungsi-fungsi API yang sudah kita buat
-import * as senderApi from '../services/senderApiService';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { PlusCircle, Search, BrainCircuit, Link as LinkIcon, MoreVertical, Trash2 } from 'lucide-react';
 
-// Komponen Modal (Add, Edit, QR) tidak perlu diubah, jadi saya ringkas di sini.
-// Pastikan komponen modal Anda masih ada di file ini atau diimpor dari file lain.
+// URL API backend Anda
+const API_URL = 'http://localhost:3000/api';
+
+// =======================================================
+// KOMPONEN MODAL (LENGKAP)
+// =======================================================
+
 const AddSenderModal = ({ isOpen, onClose, onSave, newSender, setNewSender, error }) => {
     if (!isOpen) return null;
     return (
@@ -13,14 +16,24 @@ const AddSenderModal = ({ isOpen, onClose, onSave, newSender, setNewSender, erro
                 <h3 className="text-xl font-bold mb-4">Tambah Sender Baru</h3>
                 {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
                 <form onSubmit={(e) => { e.preventDefault(); onSave(); }}>
-                    <div className="mb-4"><label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Nama Sender</label><input type="text" id="name" value={newSender.name} onChange={(e) => setNewSender({ ...newSender, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Contoh: CS Marketing" required /></div>
-                    <div className="mb-6"><label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Nomor Telepon</label><input type="text" id="phone" value={newSender.phone} onChange={(e) => setNewSender({ ...newSender, phone: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Contoh: 6281234567890" required /></div>
-                    <div className="flex justify-end space-x-3"><button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Batal</button><button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Simpan</button></div>
+                    <div className="mb-4">
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Nama Sender</label>
+                        <input type="text" id="name" value={newSender.name} onChange={(e) => setNewSender({ ...newSender, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Contoh: CS Marketing" required />
+                    </div>
+                    <div className="mb-6">
+                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Nomor Telepon</label>
+                        <input type="text" id="phone" value={newSender.phone} onChange={(e) => setNewSender({ ...newSender, phone: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Contoh: 6281234567890" required />
+                    </div>
+                    <div className="flex justify-end space-x-3">
+                        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Batal</button>
+                        <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Simpan</button>
+                    </div>
                 </form>
             </div>
         </div>
     );
 };
+
 const EditSenderModal = ({ isOpen, onClose, onSave, senderToEdit, setSenderToEdit }) => {
     if (!isOpen) return null;
     return (
@@ -28,14 +41,24 @@ const EditSenderModal = ({ isOpen, onClose, onSave, senderToEdit, setSenderToEdi
             <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md mx-4">
                 <h3 className="text-xl font-bold mb-4">Edit Nama Sender</h3>
                 <form onSubmit={(e) => { e.preventDefault(); onSave(); }}>
-                    <div className="mb-4"><label htmlFor="edit-name" className="block text-sm font-medium text-gray-700 mb-1">Nama Sender</label><input type="text" id="edit-name" value={senderToEdit?.name || ''} onChange={(e) => setSenderToEdit({ ...senderToEdit, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-md" required /></div>
-                    <div className="mb-6"><label className="block text-sm font-medium text-gray-700 mb-1">Nomor Telepon</label><p className="w-full px-3 py-2 bg-gray-100 text-gray-500 border rounded-md">{senderToEdit?.phone}</p></div>
-                    <div className="flex justify-end space-x-3"><button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md">Batal</button><button type="submit" className="px-4 py-2 bg-green-500 text-white rounded-md">Simpan</button></div>
+                    <div className="mb-4">
+                        <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700 mb-1">Nama Sender</label>
+                        <input type="text" id="edit-name" value={senderToEdit?.name || ''} onChange={(e) => setSenderToEdit({ ...senderToEdit, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-md" required />
+                    </div>
+                    <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Telepon</label>
+                        <p className="w-full px-3 py-2 bg-gray-100 text-gray-500 border rounded-md">{senderToEdit?.phone}</p>
+                    </div>
+                    <div className="flex justify-end space-x-3">
+                        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md">Batal</button>
+                        <button type="submit" className="px-4 py-2 bg-green-500 text-white rounded-md">Simpan</button>
+                    </div>
                 </form>
             </div>
         </div>
     );
 };
+
 const QrCodeModal = ({ isOpen, onClose, onConfirm, sender }) => {
     if (!isOpen) return null;
     return (
@@ -43,38 +66,44 @@ const QrCodeModal = ({ isOpen, onClose, onConfirm, sender }) => {
             <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm text-center mx-4">
                 <h3 className="text-xl font-bold mb-2">Scan QR Code</h3>
                 <p className="text-sm text-gray-600 mb-4">Scan untuk menghubungkan nomor <span className="font-bold">{sender?.phone}</span>.</p>
-                <div className="flex justify-center bg-gray-100 p-4 rounded-lg mb-4"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${sender?.phone}`} alt="QR Code" /></div>
+                <div className="flex justify-center bg-gray-100 p-4 rounded-lg mb-4">
+                    <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${sender?.phone}`} alt="QR Code" />
+                </div>
                 <p className="text-xs text-gray-500 mb-4">Status akan berubah menjadi "Paired" setelah Anda mengklik tombol di bawah (simulasi).</p>
-                <div className="flex justify-center space-x-3"><button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md">Tutup</button><button onClick={onConfirm} className="px-4 py-2 bg-green-500 text-white rounded-md">Saya Sudah Scan</button></div>
+                <div className="flex justify-center space-x-3">
+                    <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md">Tutup</button>
+                    <button onClick={onConfirm} className="px-4 py-2 bg-green-500 text-white rounded-md">Saya Sudah Scan</button>
+                </div>
             </div>
         </div>
     );
 };
 
+// =======================================================
+// KOMPONEN UTAMA HALAMAN SENDER
+// =======================================================
 
 export const SenderPage = ({ navigateTo }) => {
     const [senders, setSenders] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null); // State untuk menyimpan pesan error API
+    const [error, setError] = useState(null);
     
-    // State untuk modal
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isQrModalOpen, setIsQrModalOpen] = useState(false);
     
-    // State untuk data yang sedang diolah
     const [newSender, setNewSender] = useState({ name: '', phone: '' });
     const [currentSender, setCurrentSender] = useState(null);
     const [senderToEdit, setSenderToEdit] = useState(null);
     
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Fungsi untuk memuat data dari backend
-    const fetchSenders = async () => {
-        setIsLoading(true);
+    const fetchSenders = useCallback(async () => {
         setError(null);
         try {
-            const data = await senderApi.getSenders();
+            const response = await fetch(`${API_URL}/senders`);
+            if (!response.ok) throw new Error('Gagal memuat data sender dari server.');
+            const data = await response.json();
             setSenders(data);
         } catch (err) {
             setError(err.message);
@@ -82,16 +111,22 @@ export const SenderPage = ({ navigateTo }) => {
         } finally {
             setIsLoading(false);
         }
-    };
-
-    // useEffect untuk memuat data saat komponen pertama kali ditampilkan
-    useEffect(() => {
-        fetchSenders();
-        // Kita belum mengintegrasikan AI Agent, jadi baris ini bisa ditambahkan nanti
-        // setAgents(loadData('blastbot_agents', mockData.aiAgents));
     }, []);
 
-    // Filter data untuk pencarian
+    // --- [PERBAIKAN 1: DATA SELALU FRESH] ---
+    useEffect(() => {
+        setIsLoading(true);
+        fetchSenders();
+
+        const handleFocus = () => {
+            fetchSenders();
+        };
+        window.addEventListener('focus', handleFocus);
+        return () => {
+            window.removeEventListener('focus', handleFocus);
+        };
+    }, [fetchSenders]);
+
     const filteredSenders = useMemo(() => {
         if (!searchTerm) return senders;
         return senders.filter(sender =>
@@ -100,75 +135,82 @@ export const SenderPage = ({ navigateTo }) => {
         );
     }, [searchTerm, senders]);
 
-    // --- Handler untuk Aksi Pengguna ---
-
     const handleAddSender = async () => {
-        setError(null); // Reset error sebelum mencoba
+        setError(null);
         try {
-            await senderApi.createSender(newSender);
+            const response = await fetch(`${API_URL}/senders`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newSender)
+            });
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.message || 'Gagal menambah sender.');
+            }
             closeAddModal();
-            fetchSenders(); // Muat ulang data dari backend
+            fetchSenders();
         } catch (err) {
-            setError(err.message); // Tampilkan error di modal
-            console.error("Gagal menambah sender:", err);
+            setError(err.message);
         }
     };
 
-    const handleUpdateSender = async () => {
+    const handleUpdateSenderName = async () => {
+        if (!senderToEdit) return;
         try {
-            await senderApi.updateSenderName(senderToEdit.id, { name: senderToEdit.name });
+            // Asumsi endpoint untuk update nama adalah PUT /api/senders/:id
+            await fetch(`${API_URL}/senders/${senderToEdit.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: senderToEdit.name })
+            });
             closeEditModal();
             fetchSenders();
         } catch (err) {
             alert(`Gagal memperbarui: ${err.message}`);
-            console.error("Gagal memperbarui sender:", err);
         }
     };
     
     const handleDeleteSender = async (senderId) => {
         if (window.confirm("Apakah Anda yakin ingin menghapus sender ini?")) {
             try {
-                await senderApi.deleteSender(senderId);
+                await fetch(`${API_URL}/senders/${senderId}`, { method: 'DELETE' });
                 fetchSenders();
             } catch (err) {
                 alert(`Gagal menghapus: ${err.message}`);
-                console.error("Gagal menghapus sender:", err);
             }
         }
     };
 
-    const handleLogout = async (senderId) => {
-        if (window.confirm("Anda yakin ingin logout? Status akan menjadi 'unpaired'.")) {
-            try {
-                await senderApi.updateSenderStatus(senderId, 'unpaired');
-                fetchSenders();
-            } catch (err) {
-                alert(`Gagal logout: ${err.message}`);
-                console.error("Gagal logout:", err);
-            }
+    const updateStatus = async (senderId, newStatus) => {
+        try {
+            await fetch(`${API_URL}/senders/${senderId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+            fetchSenders();
+        } catch (err) {
+            alert(`Gagal mengubah status: ${err.message}`);
+        }
+    };
+
+    const handleLogout = (senderId) => {
+        if (window.confirm("Anda yakin ingin logout? Status WA akan menjadi 'Unpaired'.")) {
+            updateStatus(senderId, 'unpaired');
         }
     };
 
     const handleGenerateQr = (sender) => {
-        // Di aplikasi nyata, di sini Anda bisa memulai koneksi WebSocket
-        // Untuk sekarang, kita hanya membuka modal
         setCurrentSender(sender);
         setIsQrModalOpen(true);
     };
 
-    const handleConfirmScan = async () => {
+    const handleConfirmScan = () => {
         if (!currentSender) return;
-        try {
-            await senderApi.updateSenderStatus(currentSender.id, 'paired');
-            closeQrModal();
-            fetchSenders();
-        } catch (err) {
-            alert(`Gagal konfirmasi scan: ${err.message}`);
-            console.error("Gagal konfirmasi scan:", err);
-        }
+        closeQrModal();
+        updateStatus(currentSender.id, 'paired');
     };
 
-    // Fungsi helper untuk membuka/tutup modal
     const openAddModal = () => { setError(null); setIsAddModalOpen(true); };
     const closeAddModal = () => { setIsAddModalOpen(false); setNewSender({ name: '', phone: '' }); };
     const openEditModal = (sender) => { setSenderToEdit(sender); setIsEditModalOpen(true); };
@@ -177,30 +219,18 @@ export const SenderPage = ({ navigateTo }) => {
 
     return (
         <div>
-            {/* Header */}
             <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
                 <h2 className="text-3xl font-bold text-gray-800">Daftar Sender</h2>
                 <div className="flex items-center space-x-3">
-                    <button onClick={() => navigateTo('aiAgentsList')} className="flex items-center bg-yellow-400 text-gray-800 font-semibold px-4 py-2 rounded-md shadow hover:bg-yellow-500">
-                        <BrainCircuit size={20} className="mr-2" />
-                        <span>AI Agent</span>
-                    </button>
-                    <button onClick={openAddModal} className="flex items-center bg-blue-500 text-white font-semibold px-4 py-2 rounded-md shadow hover:bg-blue-600">
-                        <PlusCircle size={20} className="mr-2" />
-                        <span>Tambah Sender</span>
-                    </button>
+                    <button onClick={() => navigateTo('aiAgentsList')} className="flex items-center bg-yellow-400 text-gray-800 font-semibold px-4 py-2 rounded-md shadow hover:bg-yellow-500"><BrainCircuit size={20} className="mr-2" /><span>AI Agent</span></button>
+                    <button onClick={openAddModal} className="flex items-center bg-blue-500 text-white font-semibold px-4 py-2 rounded-md shadow hover:bg-blue-600"><PlusCircle size={20} className="mr-2" /><span>Tambah Sender</span></button>
                 </div>
             </div>
 
-            {/* Search Bar */}
             <div className="mb-6">
-                <div className="relative">
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><Search size={20} className="text-gray-400" /></div>
-                    <input type="text" placeholder="Cari berdasarkan nama atau nomor telepon..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border rounded-lg shadow-sm" />
-                </div>
+                <div className="relative"><div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><Search size={20} className="text-gray-400" /></div><input type="text" placeholder="Cari berdasarkan nama atau nomor telepon..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border rounded-lg shadow-sm" /></div>
             </div>
             
-            {/* Tabel Data */}
             <div className="bg-white p-6 rounded-xl shadow-md overflow-x-auto">
                 <table className="w-full text-sm text-left text-gray-500">
                     <thead className="text-xs text-gray-700 uppercase bg-gray-50">
@@ -208,7 +238,7 @@ export const SenderPage = ({ navigateTo }) => {
                             <th className="px-6 py-3">No</th>
                             <th className="px-6 py-3">Nama</th>
                             <th className="px-6 py-3">Nomor Telepon</th>
-                            <th className="px-6 py-3">Status</th>
+                            <th className="px-6 py-3">Status WA</th>
                             <th className="px-6 py-3">AI Agent</th>
                             <th className="px-6 py-3">Aksi</th>
                         </tr>
@@ -217,7 +247,7 @@ export const SenderPage = ({ navigateTo }) => {
                         {isLoading ? (
                             <tr><td colSpan="6" className="text-center py-10">Memuat data...</td></tr>
                         ) : error ? (
-                             <tr><td colSpan="6" className="text-center py-10 text-red-500">{error}</td></tr>
+                            <tr><td colSpan="6" className="text-center py-10 text-red-500">{error}</td></tr>
                         ) : filteredSenders.length > 0 ? (
                             filteredSenders.map((sender, index) => (
                                 <tr key={sender.id} className="bg-white border-b hover:bg-gray-50">
@@ -230,13 +260,26 @@ export const SenderPage = ({ navigateTo }) => {
                                             {sender.status === 'paired' ? 'Paired' : 'Unpaired'}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        {/* Logika AI Agent akan diintegrasikan nanti */}
-                                        <button onClick={() => navigateTo('aiAgentsList')} className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-800">
-                                            <LinkIcon size={16} />
-                                            <span>Hubungkan AI</span>
-                                        </button>
-                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {sender.aiAgent ? (
+                                            <button
+                                            onClick={() => navigateTo('aiAgentEdit', { aiAgentId: sender.aiAgent.id })}
+                                            className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-900 focus:outline-none"
+                                            title={`Klik untuk mengedit ${sender.aiAgent.name}`}
+                                            >
+                                            <BrainCircuit size={16} />
+                                            <span>{sender.aiAgent.name}</span>
+                                            </button>
+                                        ) : (
+                                            <button
+                                            onClick={() => navigateTo('aiAgentsList')}
+                                            className="flex items-center gap-1 text-gray-600 hover:text-gray-800"
+                                            >
+                                            <LinkIcon size={14} />
+                                            Hubungkan
+                                            </button>
+                                        )}
+                                        </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center space-x-2">
                                             <button onClick={() => openEditModal(sender)} className="px-3 py-1 text-xs font-medium text-white bg-green-500 rounded-md hover:bg-green-600">Edit</button>
@@ -257,13 +300,9 @@ export const SenderPage = ({ navigateTo }) => {
                 </table>
             </div>
             
-            {/* Modal */}
             <AddSenderModal isOpen={isAddModalOpen} onClose={closeAddModal} onSave={handleAddSender} newSender={newSender} setNewSender={setNewSender} error={error} />
-            <EditSenderModal isOpen={isEditModalOpen} onClose={closeEditModal} onSave={handleUpdateSender} senderToEdit={senderToEdit} setSenderToEdit={setSenderToEdit} />
+            <EditSenderModal isOpen={isEditModalOpen} onClose={closeEditModal} onSave={handleUpdateSenderName} senderToEdit={senderToEdit} setSenderToEdit={setSenderToEdit} />
             <QrCodeModal isOpen={isQrModalOpen} onClose={closeQrModal} onConfirm={handleConfirmScan} sender={currentSender} />
         </div>
     );
 };
-
-
-

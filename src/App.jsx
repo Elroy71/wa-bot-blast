@@ -25,7 +25,7 @@ import { AiAgentsListPage } from './pages/AiAgentsListPage';
 import { AiAgentEditPage } from './pages/AiAgentEditPage';
 import { AiAgentCreatePage } from './pages/AiAgentCreatePage'; 
 import BlastPage from './pages/BlastPage';
-import CreateBlastPage from './pages/CreateBlastPage';
+import BlastCreatePage from './pages/BlastCreatePage';
 import BlastDetailPage from './pages/BlastDetailPage';
 
 // --- FUNGSI HELPER UNTUK JUDUL HALAMAN ---
@@ -187,7 +187,7 @@ function App() {
             case 'sender': return <SenderPage navigateTo={navigateTo} />;
             case 'contacts': return <ContactsPage {...{ contacts, onAddContact: handleAddContact, onUpdateContact: handleUpdateContact, onDeleteContact: handleDeleteContact, onImportContacts: handleImportContacts }} />;
             case 'blasts': return <BlastPage navigateTo={navigateTo} blasts={blasts} handleDeleteBlast={handleDeleteBlast} />;
-            case 'createBlast': return <CreateBlastPage navigateTo={navigateTo} handleAddBlast={handleAddBlast} groups={groups} />;
+            case 'createBlast': return <BlastCreatePage navigateTo={navigateTo} handleAddBlast={handleAddBlast} groups={groups} />;
             case 'blastDetail': return <BlastDetailPage navigateTo={navigateTo} blasts={blasts} params={params} />;
             case 'groups': return <GroupsPage navigateTo={navigateTo} groups={groups} handleDeleteGroup={handleDeleteGroup} />;
             case 'createGroup': return <CreateGroupPage navigateTo={navigateTo} handleAddGroup={handleAddGroup} contacts={contacts} handleAddContact={handleAddContact} />;

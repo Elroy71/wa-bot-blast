@@ -147,50 +147,27 @@ const connectAgentToSender = async (req, res, next) => {
 
     try {
         // Gunakan transaksi untuk memastikan kedua update berhasil atau gagal bersamaan
-        const result = await prisma.$transaction(async (tx) => {
-            // 1. Cek apakah sender ada dan belum terhubung
-            const sender = await tx.whatsappSender.findUnique({
-                where: { id: parseInt(senderId) },
-            });
-
-            if (!sender) {
-                // Buat error custom untuk ditangkap di blok catch
-                throw { code: 'CUSTOM', status: 404, message: 'Whatsapp Sender tidak ditemukan.' };
-            }
-            if (sender.status === 'paired') {
-                throw { code: 'CUSTOM', status: 409, message: 'Whatsapp Sender ini sudah terhubung dengan agent lain.' };
-            }
-
-            // 2. Update status sender menjadi 'paired'
-            await tx.whatsappSender.update({
-                where: { id: parseInt(senderId) },
-                data: { status: 'paired' },
-            });
-
-            // 3. Hubungkan agent ke sender
-            const updatedAgent = await tx.aiAgent.update({
-                where: { id: parseInt(agentId) },
-                data: {
-                    connectedSender: {
-                        connect: { id: parseInt(senderId) },
-                    },
+        const updatedAgent = await prisma.aiAgent.update({
+            where: { id: parseInt(agentId) },
+            data: {
+                connectedSender: {
+                    connect: { id: parseInt(senderId) },
                 },
-                include: {
-                    connectedSender: true,
-                },
-            });
-
-            return updatedAgent;
+            },
+            include: {
+                connectedSender: true,
+            },
         });
-
-        res.status(200).json(result);
-
+        res.status(200).json(updatedAgent);
     } catch (error) {
-        // Menangkap error custom dari transaksi
-        if (error.code === 'CUSTOM') {
-            return res.status(error.status).json({ error: error.message });
+        // Cek jika sender atau agent tidak ditemukan
+        if (error.code === 'P2025') {
+            return res.status(404).json({ error: 'Agent atau Sender tidak ditemukan.' });
         }
-        // Teruskan error lain (misal: agent tidak ditemukan oleh Prisma) ke errorHandler
+        // Cek jika sender sudah terhubung dengan agent lain (unique constraint error)
+        if (error.code === 'P2002') {
+            return res.status(409).json({ error: 'Sender ini sudah terhubung dengan AI Agent lain.' });
+        }
         next(error);
     }
 };
@@ -198,27 +175,9 @@ const connectAgentToSender = async (req, res, next) => {
 // 7. DISCONNECT an AiAgent from a WhatsappSender
 const disconnectAgentFromSender = async (req, res, next) => {
     const { id: agentId } = req.params;
-
-    try {
-        const result = await prisma.$transaction(async (tx) => {
-            // 1. Cari agent dan ID sender yang terhubung
-            const agent = await tx.aiAgent.findUnique({
-                where: { id: parseInt(agentId) },
-                select: { senderId: true },
-            });
-
-            if (!agent) {
-                throw { code: 'CUSTOM', status: 404, message: 'AI Agent tidak ditemukan.' };
-            }
-
-            if (!agent.senderId) {
-                throw { code: 'CUSTOM', status: 400, message: 'AI Agent ini tidak sedang terhubung dengan sender manapun.' };
-            }
-
-            const senderIdToDisconnect = agent.senderId;
-
-            // 2. Putuskan koneksi agent (set senderId menjadi null)
-            const updatedAgent = await tx.aiAgent.update({
+        try {
+            // Cukup putuskan koneksi tanpa mengubah status 'unpaired'
+            const updatedAgent = await prisma.aiAgent.update({
                 where: { id: parseInt(agentId) },
                 data: {
                     connectedSender: {
@@ -226,25 +185,14 @@ const disconnectAgentFromSender = async (req, res, next) => {
                     },
                 },
             });
-
-            // 3. Update status sender kembali menjadi 'unpaired'
-            await tx.whatsappSender.update({
-                where: { id: senderIdToDisconnect },
-                data: { status: 'unpaired' },
-            });
-
-            return updatedAgent;
-        });
-
-        res.status(200).json(result);
-
-    } catch (error) {
-        if (error.code === 'CUSTOM') {
-            return res.status(error.status).json({ error: error.message });
+            res.status(200).json(updatedAgent);
+        } catch (error) {
+            if (error.code === 'P2025') {
+                return res.status(404).json({ error: 'AI Agent tidak ditemukan.' });
+            }
+            next(error);
         }
-        next(error);
-    }
-};
+    };
 
 // 8. ADD a Knowledge Base to an AiAgent
 const addKnowledge = async (req, res, next) => {

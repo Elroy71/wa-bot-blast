@@ -10,7 +10,7 @@ const availableSenders = [
     { id: 'sender-3', name: 'Info WA (+62812...003)' },
 ];
 
-const CreateBlastPage = ({ navigateTo, handleAddBlast, groups }) => {
+const BlastCreatePage = ({ navigateTo, handleAddBlast, groups }) => {
     // --- STATE UNTUK FORM ---
     const [campaignName, setCampaignName] = useState('');
     const [message, setMessage] = useState('');
@@ -207,4 +207,4 @@ const CreateBlastPage = ({ navigateTo, handleAddBlast, groups }) => {
     );
 };
 
-export default CreateBlastPage;
+export default BlastCreatePage;

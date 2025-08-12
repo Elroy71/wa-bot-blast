@@ -13,7 +13,6 @@ export const AiAgentsListPage = ({ navigateTo }) => {
     const [openMenuId, setOpenMenuId] = useState(null);
     const [agentToConnect, setAgentToConnect] = useState(null);
 
-    // Fungsi untuk memuat data dari API
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
@@ -44,6 +43,13 @@ export const AiAgentsListPage = ({ navigateTo }) => {
     }, [fetchData]);
 
     const handleDeleteAgent = async (agentIdToDelete) => {
+        const agent = agents.find(a => a.id === agentIdToDelete);
+        // --- [PERBAIKAN 3] Cek apakah agent terhubung sebelum menghapus ---
+        if (agent && agent.connectedSender) {
+            alert('Agent ini tidak dapat dihapus karena masih terhubung dengan sebuah sender. Putuskan koneksi terlebih dahulu.');
+            return;
+        }
+
         if (window.confirm("Apakah Anda yakin ingin menghapus agent ini? Semua data terkait akan hilang.")) {
             try {
                 const response = await fetch(`${API_URL}/agents/${agentIdToDelete}`, {
@@ -52,7 +58,6 @@ export const AiAgentsListPage = ({ navigateTo }) => {
                 if (!response.ok) {
                     throw new Error('Gagal menghapus agent.');
                 }
-                // Refresh data setelah berhasil
                 fetchData();
                 alert('Agent berhasil dihapus.');
             } catch (err) {
@@ -142,18 +147,24 @@ export const AiAgentsListPage = ({ navigateTo }) => {
                                         <MoreVertical size={20} />
                                     </button>
                                     {openMenuId === agent.id && (
-                                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border">
+                                        <div className="absolute right-0 mt-2 w-52 bg-white rounded-md shadow-lg z-10 border">
                                             <a href="#" onClick={(e) => { e.preventDefault(); handleActionClick('edit', agent.id) }} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                                 <Edit size={16} className="mr-3" /> Edit / Kelola
                                             </a>
                                             {agent.connectedSender && (
                                               <a href="#" onClick={(e) => { e.preventDefault(); handleActionClick('disconnect', agent.id) }} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                  <XCircle size={16} className="mr-3" /> Putuskan Device
+                                                  <XCircle size={16} className="mr-3" /> Putuskan Koneksi
                                               </a>
                                             )}
-                                            <a href="#" onClick={(e) => { e.preventDefault(); handleActionClick('delete', agent.id) }} className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                                                <Trash2 size={16} className="mr-3" /> Hapus
-                                            </a>
+                                            {/* --- [PERBAIKAN 3] Tombol Hapus dinonaktifkan jika terhubung --- */}
+                                            <button 
+                                                onClick={() => handleActionClick('delete', agent.id)} 
+                                                disabled={!!agent.connectedSender}
+                                                className={`w-full flex items-center px-4 py-2 text-sm text-left ${!!agent.connectedSender ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:bg-gray-100'}`}
+                                            >
+                                                <Trash2 size={16} className="mr-3" /> 
+                                                Hapus
+                                            </button>
                                         </div>
                                     )}
                                 </div>
@@ -171,7 +182,7 @@ export const AiAgentsListPage = ({ navigateTo }) => {
                             ) : (
                                 <button onClick={() => setAgentToConnect(agent)} className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-800">
                                     <LinkIcon size={16}/>
-                                    Hubungkan
+                                    Hubungkan ke Sender
                                 </button>
                             )}
                         </div>
@@ -203,8 +214,8 @@ export const AiAgentsListPage = ({ navigateTo }) => {
                             className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                         >
                             <option value="">-- Pilih Sender --</option>
-                            {/* Hanya tampilkan sender yang belum terhubung (status unpaired) */}
-                            {senders.filter(s => s.status === 'unpaired').map(sender => (
+                            {/* --- [PERBAIKAN 2] Filter sender yang belum terhubung ke agent MANAPUN --- */}
+                            {senders.filter(sender => !agents.some(agent => agent.senderId === sender.id)).map(sender => (
                                 <option key={sender.id} value={sender.id}>
                                     {sender.name} ({sender.phone})
                                 </option>

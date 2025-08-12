@@ -2,6 +2,8 @@
 @agentId = 1
 @baseUrl = http://localhost:3000/api/agents
 
+GET http://localhost:3000/api/agents
+Content-Type: application/json
 ###
 # =======================================================
 # 1. CREATE a new AiAgent

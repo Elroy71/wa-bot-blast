@@ -66,16 +66,15 @@ model GroupMember {
 
 // Model untuk whatsapp sender
 model WhatsappSender {
-  id               Int          @id @default(autoincrement())
-  name            String
-  phone           String        @unique
-  status          SenderStatus  @default(unpaired)
-  aiAgentId       String?       @unique //Relasi one to one dengan AI Agent 
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id        Int       @id @default(autoincrement())
+  name      String
+  phone     String    @unique
+  status    SenderStatus @default(unpaired)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
-  // Relasi one-to-one ke AiAgent
-  // Penambahan @relation untuk membuat link dua arah yang eksplisit
+  // Kolom aiAgentId (String) dihapus dari sini karena tidak benar.
+  // Relasi sekarang sepenuhnya dikelola oleh model AiAgent.
   aiAgent   AiAgent?  @relation("SenderToAgent")
 }
 
@@ -112,6 +111,7 @@ enum AgentStatus {
   active
   inactive
 }
+
 // Enum disesuaikan dengan Frontend (Bahasa Indonesia)
 enum LanguageStyle {
   Formal
@@ -121,8 +121,6 @@ enum LanguageStyle {
   Percakapan_sehari_hari
 }
 
-
-
 // Model untuk Knowledge Base milik AI Agent
 model AiKnowledge {
   id          Int            @id @default(autoincrement())
@@ -130,14 +128,12 @@ model AiKnowledge {
   title       String
   category    KnowledgeCategory @default(Panduan)
   contentText String         @db.Text
-  filePdf     String?        // Path ke file PDF yang di-upload
+  filePdf     String?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
-  // Relasi: Knowledge ini milik satu AI Agent
   aiAgent     AiAgent        @relation(fields: [aiAgentId], references: [id], onDelete: Cascade)
 }
-// Enum (Bahasa Indonesia)
 enum KnowledgeCategory {
   Panduan
   Layanan
@@ -154,7 +150,6 @@ model AiTestConversation {
   aiResponse  String   @db.Text
   createdAt   DateTime @default(now())
 
-  // Relasi: Percakapan ini milik satu AI Agent
   aiAgent     AiAgent  @relation(fields: [aiAgentId], references: [id], onDelete: Cascade)
 }
 
