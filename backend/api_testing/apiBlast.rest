@@ -1,0 +1,84 @@
+# File untuk menguji API Blastbot menggunakan ekstensi REST Client di VS Code
+
+# Variabel Global (sesuaikan jika port Anda berbeda)
+@baseUrl = http://localhost:3000/api
+
+###
+# =====================================================
+# PENGUJIAN UNTUK DATA FORM (dari endpoint lain)
+# =====================================================
+
+###
+# (1) GET All Senders
+# Mengambil semua data WhatsApp Sender yang tersedia.
+# Frontend akan memanggil endpoint ini untuk mengisi dropdown "Pilih Sender".
+GET {{baseUrl}}/senders
+Content-Type: application/json
+
+###
+# (2) GET All Groups
+# Mengambil semua data Grup Kontak.
+# Frontend akan memanggil endpoint ini untuk mengisi dropdown "Pilih Grup Target".
+GET {{baseUrl}}/groups
+Content-Type: application/json
+
+
+###
+# =====================================================
+# LANGKAH 3: PENGUJIAN MEMBUAT BLAST BARU
+# =====================================================
+
+###
+# (3) POST Create Blast
+# Mengirim data sebagai multipart/form-data.
+#
+# !! PENTING UNTUK PENGUJIAN !!
+# 1. Ganti nilai `whatsappSenderId` (contoh: 1) dengan ID yang valid dari database Anda.
+# 2. Ganti nilai `targetGroupIds` (contoh: [1, 2]) dengan ID grup yang valid.
+# 3. Buat file bernama `sample.txt` di dalam folder `backend/` (di lokasi yang sama dengan file .rest ini).
+#
+POST {{baseUrl}}/blasts
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="title"
+
+Promo Spesial Akhir Pekan
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="message"
+
+Halo {name}! Nikmati diskon spesial 50% untuk semua item akhir pekan ini. Jangan sampai ketinggalan!
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="whatsappSenderId"
+
+6
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="targetGroupIds"
+
+[1]
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="scheduledAt"
+
+2025-08-15T10:00:00.000Z
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="attachment"; filename="sample.txt"
+Content-Type: text/plain
+
+< ./sample.txt
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###
+# (4) GET All Blasts
+# Mengambil daftar semua blast yang pernah dibuat.
+# Hasilnya harus cocok dengan format yang dibutuhkan oleh BlastPage.jsx
+GET {{baseUrl}}/blasts
+Content-Type: application/json
+
+###
+# (5) GET Blast by ID
+# Mengambil detail lengkap dari satu blast.
+# Ganti angka '6' dengan ID blast yang valid dari database Anda.
+# Hasilnya harus cocok dengan format yang dibutuhkan oleh BlastDetailPage.jsx
+GET {{baseUrl}}/blasts/6
+Content-Type: application/json
+

@@ -11,7 +11,7 @@ const contactRoutes = require('./routes/contactRoutes.cjs');
 const groupRoutes = require('./routes/groupRoutes.cjs');
 const senderRoutes = require('./routes/senderRoutes.cjs');
 const aiAgentRoutes = require('./routes/aiAgentRoutes.cjs');
-// const blastRoutes = require('./routes/blastRoutes.cjs'); // Rute blast kita
+const blastRoutes = require('./routes/blastRoutes.cjs'); // Rute blast kita
 
 const app = express();
 
@@ -34,7 +34,7 @@ app.use('/api/contacts', contactRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/senders', senderRoutes);
 app.use('/api/agents', aiAgentRoutes);
-// app.use('/api/blasts', blastRoutes); // Gunakan rute blast
+app.use('/api/blasts', blastRoutes); // Gunakan rute blast
 
 // Error Handler harus selalu menjadi yang TERAKHIR.
 app.use(errorHandler);

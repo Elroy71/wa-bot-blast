@@ -1,36 +1,33 @@
+// src/middlewares/upload.cjs
+
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
-// Konfigurasi penyimpanan file
+// Tentukan direktori tujuan untuk menyimpan file lampiran
+const uploadDir = path.join(__dirname, '../../public/uploads/attachments');
+
+    // Pastikan direktori tujuan ada, jika tidak, buat direktorinya
+    if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Konfigurasi penyimpanan Multer
 const storage = multer.diskStorage({
-    // Tentukan folder tujuan untuk menyimpan file
-    destination: function (req, file, cb) {
-        cb(null, 'public/uploads/');
+    destination: (req, file, cb) => {
+        cb(null, uploadDir);
     },
-    // Buat nama file yang unik untuk menghindari konflik
-    filename: function (req, file, cb) {
+    filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
+        const extension = path.extname(file.originalname);
+        cb(null, file.fieldname + '-' + uniqueSuffix + extension);
+    },
 });
 
-// Filter untuk memastikan hanya file PDF yang di-upload
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype === 'application/pdf') {
-        cb(null, true); // Terima file
-    } else {
-        // Tolak file dengan memberikan error
-        cb(new Error('Hanya file dengan format PDF yang diizinkan!'), false);
-    }
-};
-
-// Inisialisasi multer dengan konfigurasi storage dan filter
+// Buat instance Multer dengan konfigurasi
 const upload = multer({
     storage: storage,
-    fileFilter: fileFilter,
-    limits: {
-        fileSize: 2 * 1024 * 1024 // Batasi ukuran file hingga 2MB
-    }
+  limits: { fileSize: 30 * 1024 * 1024 }, 
 });
 
 module.exports = upload;
