@@ -1,6 +1,6 @@
 // File: src/controllers/groupController.js
 
-const groupService = require('../services/group.service');
+const groupService = require('../services/group.service.cjs');
 
 const getGroups = async (req, res) => {
     try {

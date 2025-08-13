@@ -8,7 +8,7 @@ const {
     updateContact,
     deleteContact,
     importContacts, // [BARU] Impor fungsi baru
-} = require('../controllers/contactController.js');
+} = require('../controllers/contactController.cjs');
 
 // [BARU] Rute untuk import harus diletakkan SEBELUM '/:id'
 // agar 'import' tidak dianggap sebagai sebuah ID.

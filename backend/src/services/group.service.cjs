@@ -1,7 +1,7 @@
 // File: src/services/group.service.js
 // (Kode ini sama seperti sebelumnya, pastikan berada di folder yang benar)
 
-const prisma = require('../config/db'); // Mengasumsikan prisma client diekspor dari sini
+const prisma = require('../config/db.cjs'); // Mengasumsikan prisma client diekspor dari sini
 
 /**
  * Mengambil semua grup dengan jumlah anggotanya.

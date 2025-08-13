@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // Import middleware upload
-const upload = require('../middlewares/upload');
+const upload = require('../middlewares/upload.cjs');
 
 // [UPDATED] Import fungsi-fungsi baru dari controller
 const {
@@ -17,7 +17,7 @@ const {
     updateKnowledge,
     deleteKnowledge,
     testAgentConversation
-} = require('../controllers/aiAgentController');
+} = require('../controllers/aiAgentController.cjs');
 
 // --- Rute untuk AiAgent ---
 router.post('/', createAgent);

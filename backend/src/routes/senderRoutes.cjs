@@ -7,7 +7,7 @@ const {
     deleteSender,
     updateSenderStatus,
     generateQrCode,
-} = require('../controllers/senderController');
+} = require('../controllers/senderController.cjs');
 
 const router = express.Router();
 

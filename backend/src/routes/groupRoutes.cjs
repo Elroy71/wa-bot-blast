@@ -2,7 +2,7 @@
 
 const express = require('express');
 const router = express.Router();
-const groupController = require('../controllers/groupController');
+const groupController = require('../controllers/groupController.cjs');
 
 // Rute untuk mendapatkan semua grup (untuk halaman utama)
 // GET /api/groups

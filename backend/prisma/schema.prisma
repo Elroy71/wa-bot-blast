@@ -30,6 +30,7 @@ model Contact {
   // [TAMBAHAN] Relasi many-to-many dengan Group
   // Menandakan bahwa satu kontak bisa menjadi anggota banyak grup
   groups    GroupMember[]
+  blastLogs     BlastRecipientLog[] @relation("BlastToContact")
 }
 
 // Model untuk Group
@@ -43,6 +44,7 @@ model Group {
 
   // [PERUBAHAN] Relasi ke tabel perantara GroupMember
   members     GroupMember[]
+  targetedByBlasts BlastGroup[]
 }
 
 // [BARU] Model untuk tabel perantara (explicit many-to-many)
@@ -76,6 +78,7 @@ model WhatsappSender {
   // Kolom aiAgentId (String) dihapus dari sini karena tidak benar.
   // Relasi sekarang sepenuhnya dikelola oleh model AiAgent.
   aiAgent   AiAgent?  @relation("SenderToAgent")
+  blasts    Blast[]
 }
 
 // Enum untuk status sender
@@ -153,3 +156,80 @@ model AiTestConversation {
   aiAgent     AiAgent  @relation(fields: [aiAgentId], references: [id], onDelete: Cascade)
 }
 
+// =================================
+// [BARU] MODEL-MODEL UNTUK FITUR BLAST
+// =================================
+
+enum BlastStatus {
+  SCHEDULED
+  SENDING
+  COMPLETED
+  FAILED
+  PAUSED
+}
+
+enum MessageStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+model Blast {
+  id                Int      @id @default(autoincrement())
+  title             String
+  message           String   @db.Text
+  status            BlastStatus @default(SCHEDULED)
+  
+  whatsappSenderId  Int
+  whatsappSender    WhatsappSender @relation(fields: [whatsappSenderId], references: [id])
+
+  scheduledAt       DateTime?
+  startedAt         DateTime?
+  completedAt       DateTime?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  targetGroups      BlastGroup[]
+  attachments       BlastAttachment[]
+  recipientLogs     BlastRecipientLog[]
+}
+
+model BlastGroup {
+  blastId   Int
+  groupId   Int
+
+  blast     Blast @relation(fields: [blastId], references: [id], onDelete: Cascade)
+  group     Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([blastId, groupId])
+}
+
+model BlastAttachment {
+  id        Int      @id @default(autoincrement())
+  blastId   Int
+  filePath  String
+  fileType  String
+  
+  blast     Blast    @relation(fields: [blastId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model BlastRecipientLog {
+  id          Int      @id @default(autoincrement())
+  blastId     Int
+  contactId   Int
+  
+  status      MessageStatus @default(PENDING)
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  readAt      DateTime?
+  failedReason String?
+
+  blast       Blast    @relation(fields: [blastId], references: [id], onDelete: Cascade)
+  contact     Contact  @relation("BlastToContact", fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([blastId, contactId])
+}

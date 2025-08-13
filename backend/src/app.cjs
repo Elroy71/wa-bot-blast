@@ -1,29 +1,28 @@
 // src/app.js (Backend)
+
+// 1. Menggunakan 'require' untuk semua modul
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const errorHandler = require('./middlewares/errorHandler');
 
-// Import semua rute
-const contactRoutes = require('./routes/contactRoutes');
-const groupRoutes = require('./routes/groupRoutes');
-const senderRoutes = require('./routes/senderRoutes');
-// Pastikan nama file yang di-import sesuai (aiAgentRoutes.js)
-const aiAgentRoutes = require('./routes/aiAgentRoutes');
+// Import middleware dan rute
+const errorHandler = require('./middlewares/errorHandler.cjs');
+const contactRoutes = require('./routes/contactRoutes.cjs');
+const groupRoutes = require('./routes/groupRoutes.cjs');
+const senderRoutes = require('./routes/senderRoutes.cjs');
+const aiAgentRoutes = require('./routes/aiAgentRoutes.cjs');
+// const blastRoutes = require('./routes/blastRoutes.cjs'); // Rute blast kita
 
 const app = express();
 
 // Middleware
 app.use(cors());
-
-// Mengaktifkan parsing body JSON dengan limit yang lebih besar untuk mengakomodasi data AI
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Middleware untuk menyajikan file statis dari folder 'public'
-// Ini akan dibutuhkan untuk mengakses file PDF yang di-upload
+// Di CommonJS, '__dirname' sudah tersedia secara global, jadi tidak perlu trik tambahan.
 app.use('/public', express.static(path.join(__dirname, '../public')));
-
 
 // Rute-rute aplikasi Anda
 app.get('/', (req, res) => {
@@ -34,12 +33,11 @@ app.get('/', (req, res) => {
 app.use('/api/contacts', contactRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/senders', senderRoutes);
-
-// [FIXED] Menggunakan rute untuk AI Agents dengan path yang benar
 app.use('/api/agents', aiAgentRoutes);
-
+// app.use('/api/blasts', blastRoutes); // Gunakan rute blast
 
 // Error Handler harus selalu menjadi yang TERAKHIR.
 app.use(errorHandler);
 
+// 3. Menggunakan 'module.exports'
 module.exports = app;

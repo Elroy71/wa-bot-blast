@@ -1,5 +1,5 @@
 // src/controllers/contactController.js
-const prisma = require('../config/db');
+const prisma = require('../config/db.cjs');
 
 // @desc    Create a new contact
 // @route   POST /api/contacts
