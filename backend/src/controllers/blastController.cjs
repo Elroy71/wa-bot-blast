@@ -3,30 +3,29 @@
 const blastService = require('../services/blast.service.cjs');
 
 const createBlast = async (req, res, next) => {
+    // --- LANGKAH DEBUGGING ---
+    // Mari kita lihat apa yang sebenarnya ada di dalam request
+    console.log("--- Request Diterima ---");
+    console.log("Isi req.body:", req.body);
+    console.log("Isi req.file:", req.file);
+    console.log("----------------------");
+    // -------------------------
+
     try {
-        const { title, message, whatsappSenderId, targetGroupIds, scheduledAt } = req.body;
+        const { title, message, whatsappSenderId, targetGroupId, scheduledAt } = req.body;
         const attachmentFile = req.file;
 
-        if (!title || !message || !whatsappSenderId || !targetGroupIds) {
-            return res.status(400).json({ message: 'Title, message, sender, and target groups are required.' });
+        if (!title || !message || !whatsappSenderId || !targetGroupId) {
+        // Jika Anda melihat log "req.body" kosong di terminal, inilah penyebab errornya
+        return res.status(400).json({ message: 'Judul, pesan, sender, dan grup target wajib diisi.' });
         }
 
-        let parsedGroupIds;
-        try {
-            parsedGroupIds = JSON.parse(targetGroupIds);
-            if (!Array.isArray(parsedGroupIds) || parsedGroupIds.length === 0) {
-                return res.status(400).json({ message: 'Target groups must be a non-empty array.' });
-            }
-        } catch (error) {
-            return res.status(400).json({ message: 'Invalid format for targetGroupIds. It must be a JSON array string.' });
-            }
-
         const blastData = {
-            title,
-            message,
-            whatsappSenderId,
-            targetGroupIds: parsedGroupIds,
-            scheduledAt,
+        title,
+        message,
+        whatsappSenderId,
+        targetGroupId,
+        scheduledAt,
         };
 
         const newBlast = await blastService.createBlastAndQueueJob(blastData, attachmentFile);

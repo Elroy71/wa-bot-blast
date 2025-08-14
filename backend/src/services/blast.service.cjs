@@ -11,7 +11,8 @@ const blastQueue = require('../queues/blastQueue.cjs');
  * @returns {object} Data blast yang baru dibuat.
  */
 const createBlastAndQueueJob = async (blastData, attachmentFile) => {
-    const { title, message, whatsappSenderId, targetGroupIds, scheduledAt } = blastData;
+    // Menerima targetGroupId tunggal
+    const { title, message, whatsappSenderId, targetGroupId, scheduledAt } = blastData;
 
     const newBlast = await prisma.$transaction(async (tx) => {
         const blast = await tx.blast.create({
@@ -24,11 +25,12 @@ const createBlastAndQueueJob = async (blastData, attachmentFile) => {
         },
         });
 
-        await tx.blastGroup.createMany({
-        data: targetGroupIds.map(groupId => ({
+        // Menggunakan .create() untuk membuat satu relasi grup
+        await tx.blastGroup.create({
+        data: {
             blastId: blast.id,
-            groupId: parseInt(groupId),
-        })),
+            groupId: parseInt(targetGroupId),
+        }
         });
 
         if (attachmentFile) {
@@ -48,7 +50,7 @@ const createBlastAndQueueJob = async (blastData, attachmentFile) => {
     console.log(`Job added to queue for Blast ID: ${newBlast.id}`);
 
     return newBlast;
-    };
+};
 
 
 /**

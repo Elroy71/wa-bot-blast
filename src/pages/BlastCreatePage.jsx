@@ -6,14 +6,13 @@ import { ArrowLeft, Send, UploadCloud, FileText, X, Loader2 } from 'lucide-react
 const API_URL = 'http://localhost:3000/api';
 
 const BlastCreatePage = ({ navigateTo }) => {
-    // State untuk form
     const [title, setTitle] = useState('');
     const [message, setMessage] = useState('');
-    const [targetGroupIds, setTargetGroupIds] = useState([]); // Sekarang bisa array
+    // State untuk grup sekarang hanya string ID tunggal
+    const [targetGroupId, setTargetGroupId] = useState(''); 
     const [senderId, setSenderId] = useState('');
     const [file, setFile] = useState(null);
     
-    // State untuk data dropdown, loading, dan error
     const [availableSenders, setAvailableSenders] = useState([]);
     const [availableGroups, setAvailableGroups] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -21,16 +20,13 @@ const BlastCreatePage = ({ navigateTo }) => {
     
     const fileInputRef = useRef(null);
 
-    // Fetch data untuk dropdown saat komponen dimuat
     useEffect(() => {
         const fetchDropdownData = async () => {
             try {
-                // Ambil data sender
                 const sendersRes = await fetch(`${API_URL}/senders`);
                 const sendersData = await sendersRes.json();
                 setAvailableSenders(sendersData);
 
-                // Ambil data grup
                 const groupsRes = await fetch(`${API_URL}/groups`);
                 const groupsData = await groupsRes.json();
                 setAvailableGroups(groupsData);
@@ -63,7 +59,8 @@ const BlastCreatePage = ({ navigateTo }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!title || !message || targetGroupIds.length === 0 || !senderId) {
+        // Validasi untuk ID grup tunggal
+        if (!title || !message || !targetGroupId || !senderId) {
             setError('Semua field wajib diisi, kecuali file lampiran.');
             return;
         }
@@ -71,13 +68,12 @@ const BlastCreatePage = ({ navigateTo }) => {
         setLoading(true);
         setError('');
 
-        // Gunakan FormData untuk mengirim file dan teks bersamaan
         const formData = new FormData();
         formData.append('title', title);
         formData.append('message', message);
         formData.append('whatsappSenderId', senderId);
-        // Kirim array ID grup sebagai string JSON
-        formData.append('targetGroupIds', JSON.stringify(targetGroupIds)); 
+        // Mengirim ID grup tunggal
+        formData.append('targetGroupId', targetGroupId); 
         if (file) {
             formData.append('attachment', file);
         }
@@ -85,7 +81,7 @@ const BlastCreatePage = ({ navigateTo }) => {
         try {
             const response = await fetch(`${API_URL}/blasts`, {
                 method: 'POST',
-                body: formData, // Tidak perlu header Content-Type, browser akan set otomatis
+                body: formData,
             });
 
             if (!response.ok) {
@@ -94,7 +90,7 @@ const BlastCreatePage = ({ navigateTo }) => {
             }
 
             alert('Blast berhasil dibuat dan dijadwalkan!');
-            navigateTo('blasts'); // Kembali ke halaman daftar
+            navigateTo('blasts');
 
         } catch (err) {
             setError(err.message);
@@ -124,7 +120,7 @@ const BlastCreatePage = ({ navigateTo }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
                             <label htmlFor="sender" className="block text-gray-700 text-sm font-bold mb-2">Pilih Sender</label>
-                            <select id="sender" value={senderId} onChange={(e) => setSenderId(e.target.value)} className="shadow border rounded w-full py-3 px-4 text-gray-700">
+                            <select id="sender" value={senderId} onChange={(e) => setSenderId(e.target.value)} className="shadow border rounded w-full py-3 px-4 text-gray-700 bg-white">
                                 <option value="" disabled>-- Pilih Nomor Pengirim --</option>
                                 {availableSenders.map(sender => (
                                     <option key={sender.id} value={sender.id}>{sender.name} ({sender.phone})</option>
@@ -133,8 +129,14 @@ const BlastCreatePage = ({ navigateTo }) => {
                         </div>
                         <div>
                             <label htmlFor="group" className="block text-gray-700 text-sm font-bold mb-2">Pilih Grup Target</label>
-                            {/* Menggunakan 'multiple' untuk memilih lebih dari satu grup */}
-                            <select id="group" multiple value={targetGroupIds} onChange={(e) => setTargetGroupIds(Array.from(e.target.selectedOptions, option => option.value))} className="shadow border rounded w-full py-3 px-4 text-gray-700 h-24">
+                            {/* Dropdown tunggal untuk memilih satu grup */}
+                            <select 
+                                id="group" 
+                                value={targetGroupId} 
+                                onChange={(e) => setTargetGroupId(e.target.value)} 
+                                className="shadow border rounded w-full py-3 px-4 text-gray-700 bg-white"
+                            >
+                                <option value="" disabled>-- Pilih Grup Penerima --</option>
                                 {availableGroups.map(group => (
                                     <option key={group.id} value={group.id}>{group.name} ({group.memberCount} kontak)</option>
                                 ))}
