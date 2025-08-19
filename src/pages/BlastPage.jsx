@@ -1,12 +1,15 @@
 // src/pages/BlastPage.jsx
 
 import React, { useState, useEffect } from 'react';
+
+// [BARU] Impor Link dari react-router-dom
+import { Link } from 'react-router-dom';
 import { PlusCircle, Eye, Trash2, Loader2, AlertTriangle } from 'lucide-react';
 
 // URL base API Anda
 const API_URL = 'http://localhost:3000/api';
 
-// Helper function untuk status badge agar lebih rapi
+// Helper function untuk status badge
 const getStatusBadge = (status) => {
     switch (status) {
         case 'COMPLETED':
@@ -22,13 +25,12 @@ const getStatusBadge = (status) => {
     }
 };
 
-const BlastPage = ({ navigateTo }) => {
-    // State untuk data, loading, dan error
+// [PERUBAHAN] Hapus prop navigateTo dari parameter komponen
+const BlastPage = () => {
     const [blasts, setBlasts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Fungsi untuk mengambil data dari backend
     const fetchBlasts = async () => {
         setLoading(true);
         setError(null);
@@ -46,12 +48,10 @@ const BlastPage = ({ navigateTo }) => {
         }
     };
 
-    // useEffect untuk memanggil fetchBlasts saat komponen pertama kali dimuat
     useEffect(() => {
         fetchBlasts();
     }, []);
 
-    // Fungsi untuk menangani penghapusan blast
     const handleDeleteBlast = async (blastId) => {
         if (window.confirm('Apakah Anda yakin ingin menghapus blast ini?')) {
             try {
@@ -61,10 +61,9 @@ const BlastPage = ({ navigateTo }) => {
                 if (!response.ok) {
                     throw new Error('Gagal menghapus blast.');
                 }
-                // Hapus blast dari state untuk memperbarui UI secara instan
                 setBlasts(blasts.filter(b => b.id !== blastId));
             } catch (err) {
-                alert(err.message); // Tampilkan error jika gagal
+                alert(err.message);
             }
         }
     };
@@ -81,13 +80,14 @@ const BlastPage = ({ navigateTo }) => {
         <div>
             <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
                 <h2 className="text-3xl font-bold text-gray-800">Daftar Blast</h2>
-                <button 
-                    onClick={() => navigateTo('createBlast')}
+                {/* [PERBAIKAN] Mengganti button dengan komponen Link */}
+                <Link
+                    to="/blasts/create"
                     className="flex items-center justify-center bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition-colors w-full md:w-auto"
                 >
                     <PlusCircle size={20} className="mr-2" />
                     <span>Tambah Blast</span>
-                </button>
+                </Link>
             </div>
             
             <div className="bg-white p-6 rounded-xl shadow-md">
@@ -108,20 +108,22 @@ const BlastPage = ({ navigateTo }) => {
                             {blasts.map(blast => (
                                 <tr key={blast.id} className="bg-white border-b hover:bg-gray-50">
                                     <td className="px-6 py-4 font-medium text-gray-900">{blast.name}</td>
-                                    <td className="px-6 py-4">{blast.group}</td>
-                                    <td className="px-6 py-4">{blast.sender}</td>
+                                    {/* Menggunakan optional chaining (?) untuk mencegah error jika group atau sender null */}
+                                    <td className="px-6 py-4">{blast.group?.name || 'N/A'}</td>
+                                    <td className="px-6 py-4">{blast.sender?.name || 'N/A'}</td>
                                     <td className="px-6 py-4">{getStatusBadge(blast.status)}</td>
                                     <td className="px-6 py-4">
-                                        <span className="text-green-600">{blast.sent}</span> / <span className="text-red-600">{blast.failed}</span>
+                                        <span className="text-green-600">{blast.sentCount || 0}</span> / <span className="text-red-600">{blast.failedCount || 0}</span>
                                     </td>
-                                    <td className="px-6 py-4">{blast.date}</td>
+                                    <td className="px-6 py-4">{new Date(blast.createdAt).toLocaleDateString('id-ID')}</td>
                                     <td className="px-6 py-4 flex items-center space-x-4">
-                                        <button 
-                                            onClick={() => navigateTo('blastDetail', { blastId: blast.id })} 
+                                        {/* [PERBAIKAN] Mengganti button dengan Link untuk detail */}
+                                        <Link
+                                            to={`/blasts/${blast.id}`}
                                             className="flex items-center bg-gray-200 text-gray-800 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors text-xs"
                                         >
                                             <Eye size={14} className="mr-1"/> Detail
-                                        </button>
+                                        </Link>
                                         <button 
                                             onClick={() => handleDeleteBlast(blast.id)}
                                             className="flex items-center bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition-colors text-xs"

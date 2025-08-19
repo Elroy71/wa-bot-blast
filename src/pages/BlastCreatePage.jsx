@@ -2,10 +2,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Send, UploadCloud, FileText, X, Loader2 } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
 
 const API_URL = 'http://localhost:3000/api';
 
-const BlastCreatePage = ({ navigateTo }) => {
+const BlastCreatePage = () => {
+    const navigate = useNavigate();
+
     const [title, setTitle] = useState('');
     const [message, setMessage] = useState('');
     // State untuk grup sekarang hanya string ID tunggal
@@ -90,7 +93,7 @@ const BlastCreatePage = ({ navigateTo }) => {
             }
 
             alert('Blast berhasil dibuat dan dijadwalkan!');
-            navigateTo('blasts');
+            navigate('/blasts');
 
         } catch (err) {
             setError(err.message);
@@ -102,9 +105,9 @@ const BlastCreatePage = ({ navigateTo }) => {
     return (
         <div>
             <div className="flex items-center mb-6">
-                <button onClick={() => navigateTo('blasts')} className="p-2 rounded-full hover:bg-gray-200 mr-4">
+                <Link to="/blasts" className="p-2 rounded-full hover:bg-gray-200 mr-4">
                     <ArrowLeft size={24} className="text-gray-700" />
-                </button>
+                </Link>
                 <h2 className="text-3xl font-bold text-gray-800">Buat Blast Baru</h2>
             </div>
 
@@ -169,7 +172,7 @@ const BlastCreatePage = ({ navigateTo }) => {
                     </div>
 
                     <div className="flex items-center justify-end space-x-4 mt-8">
-                        <button type="button" onClick={() => navigateTo('blasts')} className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg">Batal</button>
+                        <Link to="/blasts" className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg">Batal</Link>
                         <button type="submit" disabled={loading} className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg shadow disabled:bg-indigo-300">
                             {loading ? <Loader2 className="animate-spin mr-2" /> : <Send size={18} className="mr-2" />}
                             {loading ? 'Menjadwalkan...' : 'Buat Jadwal Blast'}

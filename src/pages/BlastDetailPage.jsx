@@ -1,6 +1,7 @@
 // src/pages/BlastDetailPage.jsx
 
 import React, { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, File, CheckCircle, XCircle, Clock, Loader2, AlertTriangle } from 'lucide-react';
 
 const API_URL = 'http://localhost:3000/api';
@@ -19,8 +20,8 @@ const StatusBadge = ({ status }) => {
     return <span className={`${baseClasses} bg-gray-100 text-gray-800`}><Clock size={14} className="mr-1.5"/>{status}</span>;
 };
 
-const BlastDetailPage = ({ navigateTo, params }) => {
-    const { blastId } = params;
+const BlastDetailPage = () => {
+    const { blastId } = useParams();
     const [blast, setBlast] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -59,9 +60,9 @@ const BlastDetailPage = ({ navigateTo, params }) => {
             <div className="text-center">
                 <h2 className="text-2xl font-bold text-red-700 flex items-center justify-center"><AlertTriangle className="mr-2" /> {error || 'Blast Tidak Ditemukan'}</h2>
                 <p className="text-gray-500 mt-2">Riwayat blast yang Anda cari tidak ada atau mungkin telah dihapus.</p>
-                <button onClick={() => navigateTo('blasts')} className="mt-6 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700">
+                <Link to="/blasts" className="mt-6 inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700">
                     Kembali ke Daftar Blast
-                </button>
+                </Link>
             </div>
         );
     }
@@ -69,9 +70,9 @@ const BlastDetailPage = ({ navigateTo, params }) => {
     return (
         <div>
             <div className="flex items-center mb-6">
-                <button onClick={() => navigateTo('blasts')} className="p-2 rounded-full hover:bg-gray-200 mr-4">
+                <Link to="/blasts" className="p-2 rounded-full hover:bg-gray-200 mr-4">
                     <ArrowLeft size={24} className="text-gray-700" />
-                </button>
+                </Link>
                 <div>
                     <h2 className="text-3xl font-bold text-gray-800">Detail Blast: {blast.name}</h2>
                     <p className="text-gray-500 text-sm mt-1">ID: {blast.id}</p>
