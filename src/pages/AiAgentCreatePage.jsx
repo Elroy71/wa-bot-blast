@@ -1,20 +1,26 @@
+// src/pages/AiAgentCreatePage.jsx
+
 import React from 'react';
+// [BARU] Impor hook dan komponen dari react-router-dom
+import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import AiAgentForm from '../components/AiAgentForm';
 
 const API_URL = 'http://localhost:3000/api';
 
-export const AiAgentCreatePage = ({ navigateTo }) => {
+// [PERUBAHAN] Hapus prop navigateTo
+export const AiAgentCreatePage = () => {
+    // [PERBAIKAN] Gunakan useNavigate
+    const navigate = useNavigate();
     
     const handleAddAgent = async (newAgentData) => {
         try {
-            // Data yang dikirim ke backend disesuaikan dengan skema
             const payload = {
                 name: newAgentData.name,
                 company: newAgentData.company,
                 languageStyle: newAgentData.languageStyle,
                 behavior: newAgentData.behavior,
-                status: newAgentData.status, // Frontend mengirim "Aktif" atau "Nonaktif"
+                status: newAgentData.status,
             };
 
             const response = await fetch(`${API_URL}/agents`, {
@@ -29,7 +35,8 @@ export const AiAgentCreatePage = ({ navigateTo }) => {
             }
 
             alert('Agent baru berhasil dibuat!');
-            navigateTo('aiAgentsList');
+            // [PERBAIKAN] Gunakan navigate untuk pindah halaman
+            navigate('/ai-agents');
 
         } catch (error) {
             alert(`Terjadi kesalahan: ${error.message}`);
@@ -39,15 +46,17 @@ export const AiAgentCreatePage = ({ navigateTo }) => {
     return (
         <div className="flex flex-col h-full">
             <div className="flex items-center mb-6">
-                <button onClick={() => navigateTo('aiAgentsList')} className="p-2 rounded-full hover:bg-gray-200 mr-4">
+                {/* [PERBAIKAN] Gunakan Link untuk tombol kembali */}
+                <Link to="/ai-agents" className="p-2 rounded-full hover:bg-gray-200 mr-4">
                     <ArrowLeft size={24} className="text-gray-700" />
-                </button>
+                </Link>
                 <h2 className="text-3xl font-bold text-gray-800">Buat AI Agent Baru</h2>
             </div>
 
             <AiAgentForm 
                 onSubmit={handleAddAgent} 
-                onCancel={() => navigateTo('aiAgentsList')}
+                // [PERBAIKAN] Gunakan navigate untuk aksi batal
+                onCancel={() => navigate('/ai-agents')}
                 submitButtonText="Simpan Agent"
             />
         </div>

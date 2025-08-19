@@ -1,11 +1,15 @@
+// src/pages/SenderPage.jsx
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { PlusCircle, Search, BrainCircuit, Link as LinkIcon, MoreVertical, Trash2 } from 'lucide-react';
+// [BARU] Impor Link dari react-router-dom
+import { Link } from 'react-router-dom';
+import { PlusCircle, Search, BrainCircuit, Link as LinkIcon } from 'lucide-react';
 
 // URL API backend Anda
 const API_URL = 'http://localhost:3000/api';
 
 // =======================================================
-// KOMPONEN MODAL (LENGKAP)
+// KOMPONEN MODAL (TIDAK ADA PERUBAHAN)
 // =======================================================
 
 const AddSenderModal = ({ isOpen, onClose, onSave, newSender, setNewSender, error }) => {
@@ -83,7 +87,8 @@ const QrCodeModal = ({ isOpen, onClose, onConfirm, sender }) => {
 // KOMPONEN UTAMA HALAMAN SENDER
 // =======================================================
 
-export const SenderPage = ({ navigateTo }) => {
+// [PERUBAHAN] Hapus prop navigateTo
+export const SenderPage = () => {
     const [senders, setSenders] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -113,7 +118,6 @@ export const SenderPage = ({ navigateTo }) => {
         }
     }, []);
 
-    // --- [PERBAIKAN 1: DATA SELALU FRESH] ---
     useEffect(() => {
         setIsLoading(true);
         fetchSenders();
@@ -157,7 +161,6 @@ export const SenderPage = ({ navigateTo }) => {
     const handleUpdateSenderName = async () => {
         if (!senderToEdit) return;
         try {
-            // Asumsi endpoint untuk update nama adalah PUT /api/senders/:id
             await fetch(`${API_URL}/senders/${senderToEdit.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -222,8 +225,16 @@ export const SenderPage = ({ navigateTo }) => {
             <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
                 <h2 className="text-3xl font-bold text-gray-800">Daftar Sender</h2>
                 <div className="flex items-center space-x-3">
-                    <button onClick={() => navigateTo('aiAgentsList')} className="flex items-center bg-yellow-400 text-gray-800 font-semibold px-4 py-2 rounded-md shadow hover:bg-yellow-500"><BrainCircuit size={20} className="mr-2" /><span>AI Agent</span></button>
-                    <button onClick={openAddModal} className="flex items-center bg-blue-500 text-white font-semibold px-4 py-2 rounded-md shadow hover:bg-blue-600"><PlusCircle size={20} className="mr-2" /><span>Tambah Sender</span></button>
+                    {/* [PERBAIKAN] Mengganti button dengan Link */}
+                    <Link to="/ai-agents" className="flex items-center bg-yellow-400 text-gray-800 font-semibold px-4 py-2 rounded-md shadow hover:bg-yellow-500">
+                        <BrainCircuit size={20} className="mr-2" />
+                        <span>AI Agent</span>
+                    </Link>
+                    {/* Tombol ini membuka modal, jadi tetap <button> */}
+                    <button onClick={openAddModal} className="flex items-center bg-blue-500 text-white font-semibold px-4 py-2 rounded-md shadow hover:bg-blue-600">
+                        <PlusCircle size={20} className="mr-2" />
+                        <span>Tambah Sender</span>
+                    </button>
                 </div>
             </div>
 
@@ -262,24 +273,26 @@ export const SenderPage = ({ navigateTo }) => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {sender.aiAgent ? (
-                                            <button
-                                            onClick={() => navigateTo('aiAgentEdit', { aiAgentId: sender.aiAgent.id })}
-                                            className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-900 focus:outline-none"
-                                            title={`Klik untuk mengedit ${sender.aiAgent.name}`}
+                                            // [PERBAIKAN] Mengganti button dengan Link
+                                            <Link
+                                                to={`/ai-agents/edit/${sender.aiAgent.id}`}
+                                                className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-900 focus:outline-none"
+                                                title={`Klik untuk mengedit ${sender.aiAgent.name}`}
                                             >
-                                            <BrainCircuit size={16} />
-                                            <span>{sender.aiAgent.name}</span>
-                                            </button>
+                                                <BrainCircuit size={16} />
+                                                <span>{sender.aiAgent.name}</span>
+                                            </Link>
                                         ) : (
-                                            <button
-                                            onClick={() => navigateTo('aiAgentsList')}
-                                            className="flex items-center gap-1 text-gray-600 hover:text-gray-800"
+                                            // [PERBAIKAN] Mengganti button dengan Link
+                                            <Link
+                                                to="/ai-agents"
+                                                className="flex items-center gap-1 text-gray-600 hover:text-gray-800"
                                             >
-                                            <LinkIcon size={14} />
-                                            Hubungkan
-                                            </button>
+                                                <LinkIcon size={14} />
+                                                Hubungkan
+                                            </Link>
                                         )}
-                                        </td>
+                                    </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center space-x-2">
                                             <button onClick={() => openEditModal(sender)} className="px-3 py-1 text-xs font-medium text-white bg-green-500 rounded-md hover:bg-green-600">Edit</button>

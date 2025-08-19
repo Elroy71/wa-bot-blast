@@ -1,10 +1,19 @@
+// src/pages/AiAgentEditPage.jsx
+
 import React, { useState, useEffect } from 'react';
+// [BARU] Impor hook dan komponen dari react-router-dom
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import AiAgentForm from '../components/AiAgentForm';
 
 const API_URL = 'http://localhost:3000/api';
 
-export const AiAgentEditPage = ({ navigateTo, params }) => {
+// [PERUBAHAN] Hapus props navigateTo dan params
+export const AiAgentEditPage = () => {
+    // [PERBAIKAN] Gunakan hook dari react-router-dom
+    const { agentId } = useParams();
+    const navigate = useNavigate();
+
     const [agent, setAgent] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -13,17 +22,15 @@ export const AiAgentEditPage = ({ navigateTo, params }) => {
         const fetchAgentData = async () => {
             try {
                 setLoading(true);
-                const response = await fetch(`${API_URL}/agents/${params.aiAgentId}`);
+                const response = await fetch(`${API_URL}/agents/${agentId}`);
                 if (!response.ok) {
                     throw new Error('Gagal memuat data agent.');
                 }
                 const data = await response.json();
                 
-                // Map status dari backend ('active') ke frontend ('Aktif')
                 const formattedData = {
                     ...data,
                     status: data.status === 'active' ? 'Aktif' : 'Nonaktif',
-                    // Ganti nama field agar sesuai dengan form
                     knowledgeBases: data.knowledge || [], 
                 };
                 setAgent(formattedData);
@@ -34,12 +41,11 @@ export const AiAgentEditPage = ({ navigateTo, params }) => {
             }
         };
 
-        if (params.aiAgentId) {
+        if (agentId) {
             fetchAgentData();
         }
-    }, [params.aiAgentId]);
+    }, [agentId]);
     
-    // Fungsi ini hanya mengupdate data dasar agent
     const handleUpdateAgent = async (updatedAgentData) => {
         try {
             const payload = {
@@ -62,7 +68,8 @@ export const AiAgentEditPage = ({ navigateTo, params }) => {
             }
             
             alert('Perubahan berhasil disimpan!');
-            navigateTo('aiAgentsList');
+            // [PERBAIKAN] Gunakan navigate untuk pindah halaman
+            navigate('/ai-agents');
 
         } catch (error) {
             alert(`Terjadi kesalahan: ${error.message}`);
@@ -82,9 +89,10 @@ export const AiAgentEditPage = ({ navigateTo, params }) => {
     return (
         <div className="flex flex-col h-full">
             <div className="flex items-center mb-6">
-                <button onClick={() => navigateTo('aiAgentsList')} className="p-2 rounded-full hover:bg-gray-200 mr-4">
+                {/* [PERBAIKAN] Gunakan Link untuk tombol kembali */}
+                <Link to="/ai-agents" className="p-2 rounded-full hover:bg-gray-200 mr-4">
                     <ArrowLeft size={24} className="text-gray-700" />
-                </button>
+                </Link>
                 <h2 className="text-3xl font-bold text-gray-800 truncate">
                     Edit AI Agent: <span className="text-indigo-600">{agent.name}</span>
                 </h2>
@@ -93,7 +101,8 @@ export const AiAgentEditPage = ({ navigateTo, params }) => {
             <AiAgentForm 
                 initialData={agent}
                 onSubmit={handleUpdateAgent}
-                onCancel={() => navigateTo('aiAgentsList')}
+                // [PERBAIKAN] Gunakan navigate untuk aksi batal
+                onCancel={() => navigate('/ai-agents')}
                 submitButtonText="Simpan Perubahan"
             />
         </div>

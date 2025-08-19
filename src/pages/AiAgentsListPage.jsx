@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { PlusCircle, BrainCircuit, ArrowLeft, MoreVertical, Edit, Link as LinkIcon, Trash2, XCircle } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import Modal from '../components/common/Modal';
 
 const API_URL = 'http://localhost:3000/api';
 
-export const AiAgentsListPage = ({ navigateTo }) => {
+export const AiAgentsListPage = () => {
+    const navigate = useNavigate();
     const [agents, setAgents] = useState([]);
     const [senders, setSenders] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -87,7 +89,7 @@ export const AiAgentsListPage = ({ navigateTo }) => {
     const handleActionClick = (action, agentId) => {
         setOpenMenuId(null); 
         if (action === 'edit') {
-            navigateTo('aiAgentEdit', { aiAgentId: agentId });
+            navigate(`/ai-agents/edit/${agentId}`);
         } else if (action === 'delete') {
             handleDeleteAgent(agentId);
         } else if (action === 'disconnect') {
@@ -125,15 +127,15 @@ export const AiAgentsListPage = ({ navigateTo }) => {
         <div>
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center">
-                    <button onClick={() => navigateTo('sender')} className="p-2 rounded-full hover:bg-gray-200 mr-4">
+                    <Link to="/sender" className="p-2 rounded-full hover:bg-gray-200 mr-4">
                         <ArrowLeft size={24} className="text-gray-700" />
-                    </button>
+                    </Link>
                     <h2 className="text-3xl font-bold text-gray-800">AI Agent</h2>
                 </div>
-                <button onClick={() => navigateTo('aiAgentCreate')} className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition-colors">
+                <Link to="/ai-agents/create" className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition-colors">
                     <PlusCircle size={20} className="mr-2" />
                     Tambah AI Agent
-                </button>
+                </Link>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -148,19 +150,18 @@ export const AiAgentsListPage = ({ navigateTo }) => {
                                     </button>
                                     {openMenuId === agent.id && (
                                         <div className="absolute right-0 mt-2 w-52 bg-white rounded-md shadow-lg z-10 border">
-                                            <a href="#" onClick={(e) => { e.preventDefault(); handleActionClick('edit', agent.id) }} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <button onClick={() => handleActionClick('edit', agent.id)} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                                 <Edit size={16} className="mr-3" /> Edit / Kelola
-                                            </a>
-                                            {agent.connectedSender && (
-                                              <a href="#" onClick={(e) => { e.preventDefault(); handleActionClick('disconnect', agent.id) }} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                  <XCircle size={16} className="mr-3" /> Putuskan Koneksi
-                                              </a>
+                                            </button>
+                                            {agent.senderId && (
+                                                <button onClick={() => handleActionClick('disconnect', agent.id)} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                    <XCircle size={16} className="mr-3" /> Putuskan Koneksi
+                                                </button>
                                             )}
-                                            {/* --- [PERBAIKAN 3] Tombol Hapus dinonaktifkan jika terhubung --- */}
                                             <button 
                                                 onClick={() => handleActionClick('delete', agent.id)} 
-                                                disabled={!!agent.connectedSender}
-                                                className={`w-full flex items-center px-4 py-2 text-sm text-left ${!!agent.connectedSender ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:bg-gray-100'}`}
+                                                disabled={!!agent.senderId}
+                                                className={`w-full flex items-center px-4 py-2 text-sm text-left 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:bg-gray-100'}`}
                                             >
                                                 <Trash2 size={16} className="mr-3" /> 
                                                 Hapus
