@@ -8,7 +8,7 @@ import { Search, Bell, ChevronDown, Menu } from 'lucide-react';
  * @param {function} props.onMenuClick - Fungsi untuk membuka sidebar di tampilan mobile.
  * @param {string} props.title - Judul halaman yang akan ditampilkan.
  */
-const Header = ({ onMenuClick, title }) => {
+const Header = ({ onMenuClick }) => {
     return (
         <header className="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-20 h-20 flex-shrink-0">
             {/* Sisi Kiri: Tombol Menu Mobile & Judul Halaman */}

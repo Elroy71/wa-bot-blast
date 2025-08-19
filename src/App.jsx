@@ -1,79 +1,136 @@
-import React, { useState, useEffect } from 'react'; 
+// src/App.jsx
 
-import ContactsPage from './pages/ContactsPage'; // Sesuaikan path jika perlu
-import * as contactService from './services/contactService'; // Impor service kita
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 
-// --- KOMPONEN LAYOUT (SEKARANG DIIMPOR DARI FILENYA MASING-MASING) ---
+// --- SERVICE ---
+import * as contactService from './services/contactService';
+
+// --- KOMPONEN LAYOUT ---
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import PagePlaceholder from './components/common/PagePlaceholder';
 
 // --- DATA MOCK ---
-import { 
-    contactGroups as initialGroupsData, 
-    allContacts as initialContactsData,
-    recentBlasts as initialBlastsData 
+import {
+    contactGroups as initialGroupsData,
+    recentBlasts as initialBlastsData
 } from './data/mockData';
 
 // --- HALAMAN (PAGES) ---
 import DashboardPage from './pages/DashboardPage';
+import ContactsPage from './pages/ContactsPage';
 import GroupsPage from './pages/GroupsPage';
 import CreateGroupPage from './pages/CreateGroupPage';
 import EditGroupPage from './pages/EditGroupPage';
 import { SenderPage } from './pages/SenderPage';
 import { AiAgentsListPage } from './pages/AiAgentsListPage';
 import { AiAgentEditPage } from './pages/AiAgentEditPage';
-import { AiAgentCreatePage } from './pages/AiAgentCreatePage'; 
+import { AiAgentCreatePage } from './pages/AiAgentCreatePage';
 import BlastPage from './pages/BlastPage';
 import BlastCreatePage from './pages/BlastCreatePage';
 import BlastDetailPage from './pages/BlastDetailPage';
 
 // --- FUNGSI HELPER UNTUK JUDUL HALAMAN ---
-const getPageTitle = (pageId) => {
+const getPageTitle = (pathname) => {
     const titles = {
-        dashboard: 'Beranda',
-        sender: 'Sender WhatsApp',
-        contacts: 'Daftar Kontak',
-        groups: 'Daftar Grup',
-        blasts: 'Riwayat Blast',
-        notifications: 'Notifikasi',
-        settings: 'Pengaturan Profil',
-        logout: 'Logout',
-        aiAgentsList: 'Daftar Agen AI',
-        aiAgentCreate: 'Buat Agen AI Baru',
-        aiAgentEdit: 'Edit Agen AI',
-        createGroup: 'Buat Grup Baru',
-        editGroup: 'Edit Grup',
-        createBlast: 'Buat Blast Baru',
-        blastDetail: 'Detail Blast',
+        '/': 'Beranda',
+        '/sender': 'Sender WhatsApp',
+        '/contacts': 'Daftar Kontak',
+        '/groups': 'Daftar Grup',
+        '/groups/create': 'Buat Grup Baru',
+        '/blasts': 'Riwayat Blast',
+        '/blasts/create': 'Buat Blast Baru',
+        '/ai-agents': 'Daftar Agen AI',
+        '/ai-agents/create': 'Buat Agen AI Baru',
+        '/notifications': 'Notifikasi',
+        '/settings': 'Pengaturan Profil',
     };
-    return titles[pageId] || 'BlastBot AI';
+    if (pathname.startsWith('/groups/edit/')) return 'Edit Grup';
+    if (pathname.startsWith('/blasts/')) return 'Detail Blast';
+    if (pathname.startsWith('/ai-agents/edit/')) return 'Edit Agen AI';
+    return titles[pathname] || 'BlastBot AI';
+};
+
+// Komponen internal untuk membungkus layout dan mengakses context router
+const AppContent = ({ contacts, groups, blasts, loadingContacts, errorContacts, handlers }) => {
+    const location = useLocation();
+    const [isDesktopExpanded, setIsDesktopExpanded] = useState(true);
+    const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+    return (
+        <div className="flex h-screen bg-gray-100 font-sans">
+            {isMobileSidebarOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden" onClick={() => setMobileSidebarOpen(false)}></div>
+            )}
+
+            <Sidebar
+                isDesktopExpanded={isDesktopExpanded}
+                toggleDesktopSidebar={() => setIsDesktopExpanded(prev => !prev)}
+                isMobileOpen={isMobileSidebarOpen}
+                setMobileOpen={setMobileSidebarOpen}
+            />
+
+            <div className="flex-1 flex flex-col overflow-hidden">
+                <Header
+                    onMenuClick={() => setMobileSidebarOpen(true)}
+                    title={getPageTitle(location.pathname)}
+                />
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-4 sm:p-6 md:p-8">
+                    {loadingContacts && location.pathname === '/contacts' ? (
+                        <p className="text-center text-gray-500">Memuat data kontak...</p>
+                    ) : errorContacts ? (
+                        <p className="text-center text-red-500 bg-red-100 p-4 rounded-lg">{errorContacts}</p>
+                    ) : (
+                        // [PERUBAHAN] Menambahkan rute untuk AI Agents
+                        <Routes>
+                            <Route index element={<DashboardPage />} />
+                            <Route path="dashboard" element={<Navigate to="/" replace />} />
+                            <Route path="sender" element={<SenderPage />} />
+                            <Route path="contacts" element={<ContactsPage {...{ contacts, onAddContact: handlers.handleAddContact, onUpdateContact: handlers.handleUpdateContact, onDeleteContact: handlers.handleDeleteContact, onImportContacts: handlers.handleImportContacts }} />} />
+                            
+                            <Route path="groups" element={<GroupsPage groups={groups} handleDeleteGroup={handlers.handleDeleteGroup} />} />
+                            <Route path="groups/create" element={<CreateGroupPage handleAddGroup={handlers.handleAddGroup} contacts={contacts} handleAddContact={handlers.handleAddContact} />} />
+                            <Route path="groups/edit/:groupId" element={<EditGroupPage groups={groups} contacts={contacts} handleUpdateGroup={handlers.handleUpdateGroup} handleAddContact={handlers.handleAddContact} />} />
+
+                            <Route path="blasts" element={<BlastPage blasts={blasts} handleDeleteBlast={handlers.handleDeleteBlast} />} />
+                            <Route path="blasts/create" element={<BlastCreatePage handleAddBlast={handlers.handleAddBlast} groups={groups} />} />
+                            <Route path="blasts/:blastId" element={<BlastDetailPage blasts={blasts} />} />
+
+                            {/* --- RUTE BARU DITAMBAHKAN DI SINI --- */}
+                            <Route path="ai-agents" element={<AiAgentsListPage />} />
+                            <Route path="ai-agents/create" element={<AiAgentCreatePage />} />
+                            <Route path="ai-agents/edit/:agentId" element={<AiAgentEditPage />} />
+                            {/* ------------------------------------ */}
+
+                            <Route path="notifications" element={<PagePlaceholder pageName="Notifikasi" />} />
+                            <Route path="settings" element={<PagePlaceholder pageName="Setting Profile" />} />
+                            <Route path="logout" element={<PagePlaceholder pageName="Logout" />} />
+
+                            <Route path="*" element={<PagePlaceholder pageName="404: Halaman Tidak Ditemukan" />} />
+                        </Routes>
+                    )}
+                </main>
+            </div>
+        </div>
+    );
 };
 
 
 // --- KOMPONEN UTAMA APLIKASI ---
 function App() {
-    // State untuk navigasi dan tampilan UI
-    const [currentView, setCurrentView] = useState({ page: 'dashboard', params: {} });
-    const [isDesktopExpanded, setIsDesktopExpanded] = useState(true);
-    const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-
-    // State untuk data aplikasi
+    // State dan handler tidak berubah
     const [groups, setGroups] = useState(initialGroupsData);
     const [blasts, setBlasts] = useState(initialBlastsData);
-
-
     const [contacts, setContacts] = useState([]);
     const [loadingContacts, setLoadingContacts] = useState(true);
     const [errorContacts, setErrorContacts] = useState(null);
 
-    // Fungsi untuk mengambil semua kontak dari backend
     const fetchContacts = async () => {
         try {
             setLoadingContacts(true);
             const response = await contactService.getContacts();
-            console.log("Data diterima dari API:", response.data);
-            setContacts(response.data); // Simpan data dari API ke state
+            setContacts(response.data);
             setErrorContacts(null);
         } catch (err) {
             console.error("Gagal mengambil kontak:", err);
@@ -83,22 +140,10 @@ function App() {
         }
     };
 
-    // [PERBAIKAN 1] Tambahkan useEffect untuk memanggil fetchContacts
     useEffect(() => {
-        // Fungsi ini akan dipanggil saat komponen App pertama kali dimuat
         fetchContacts();
-    }, []); // Array kosong berarti "jalankan sekali saja"
+    }, []);
 
-    // Fungsi navigasi
-    const navigateTo = (page, params = {}) => {
-        setCurrentView({ page, params });
-        window.scrollTo(0, 0); // Selalu scroll ke atas saat pindah halaman
-    };
-    
-    const toggleDesktopSidebar = () => setIsDesktopExpanded(prev => !prev);
-
-    // --- HANDLERS UNTUK OPERASI CRUD ---
-    // (Tidak ada perubahan pada logika CRUD ini)
     const handleAddGroup = (newGroupData) => {
         const newGroup = { ...newGroupData, id: `group-${Date.now()}` };
         setGroups(prev => [newGroup, ...prev]);
@@ -132,111 +177,63 @@ function App() {
             setBlasts(prev => prev.filter(blast => blast.id !== blastIdToDelete));
         }
     };
-    // Handler untuk menambah kontak baru
     const handleAddContact = async (formData) => {
         try {
             await contactService.createContact(formData);
-            fetchContacts(); // Ambil ulang daftar kontak agar data terbaru muncul
+            fetchContacts();
         } catch (err) {
             console.error("Gagal menambah kontak:", err);
             alert("Gagal menyimpan kontak. Periksa kembali data Anda.");
         }
     };
-    // Handler untuk mengupdate kontak
     const handleUpdateContact = async (id, formData) => {
         try {
             await contactService.updateContact(id, formData);
-            fetchContacts(); // Ambil ulang daftar kontak
+            fetchContacts();
         } catch (err) {
             console.error("Gagal mengupdate kontak:", err);
             alert("Gagal mengupdate kontak.");
         }
     };
-
-    // Handler untuk menghapus kontak
     const handleDeleteContact = async (id) => {
-        // Konfirmasi sebelum menghapus
         if (window.confirm('Apakah Anda yakin ingin menghapus kontak ini?')) {
-        try {
-            await contactService.deleteContact(id);
-            fetchContacts(); // Ambil ulang daftar kontak
-        } catch (err) {
-            console.error("Gagal menghapus kontak:", err);
-            alert("Gagal menghapus kontak.");
-        }
+            try {
+                await contactService.deleteContact(id);
+                fetchContacts();
+            } catch (err) {
+                console.error("Gagal menghapus kontak:", err);
+                alert("Gagal menghapus kontak.");
+            }
         }
     };
-
-    // Handler untuk import kontak dari Excel
     const handleImportContacts = async (newContacts) => {
         try {
             const response = await contactService.importContacts(newContacts);
-            alert(response.data.message); // Tampilkan pesan sukses dari backend
-            fetchContacts(); // Ambil ulang daftar kontak
+            alert(response.data.message);
+            fetchContacts();
         } catch (err) {
             console.error("Gagal mengimpor kontak:", err);
             alert("Gagal mengimpor kontak. Pastikan format file benar.");
         }
     };
-
-    // --- RENDER HALAMAN BERDASARKAN STATE ---
-    const renderPage = () => {
-        const { page, params } = currentView;
-        switch (page) {
-            case 'dashboard': return <DashboardPage navigateTo={navigateTo} />;
-            case 'sender': return <SenderPage navigateTo={navigateTo} />;
-            case 'contacts': return <ContactsPage {...{ contacts, onAddContact: handleAddContact, onUpdateContact: handleUpdateContact, onDeleteContact: handleDeleteContact, onImportContacts: handleImportContacts }} />;
-            case 'blasts': return <BlastPage navigateTo={navigateTo} blasts={blasts} handleDeleteBlast={handleDeleteBlast} />;
-            case 'createBlast': return <BlastCreatePage navigateTo={navigateTo} handleAddBlast={handleAddBlast} groups={groups} />;
-            case 'blastDetail': return <BlastDetailPage navigateTo={navigateTo} blasts={blasts} params={params} />;
-            case 'groups': return <GroupsPage navigateTo={navigateTo} groups={groups} handleDeleteGroup={handleDeleteGroup} />;
-            case 'createGroup': return <CreateGroupPage navigateTo={navigateTo} handleAddGroup={handleAddGroup} contacts={contacts} handleAddContact={handleAddContact} />;
-            case 'editGroup': return <EditGroupPage navigateTo={navigateTo} params={params} groups={groups} contacts={contacts} handleUpdateGroup={handleUpdateGroup} handleAddContact={handleAddContact} />;
-            case 'aiAgentsList': return <AiAgentsListPage navigateTo={navigateTo} />;
-            case 'aiAgentCreate': return <AiAgentCreatePage navigateTo={navigateTo} params={params} />;
-            case 'aiAgentEdit': return <AiAgentEditPage navigateTo={navigateTo} params={params} />;
-            case 'notifications': return <PagePlaceholder pageName="Notifikasi" />;
-            case 'settings': return <PagePlaceholder pageName="Setting Profile" />;
-            case 'logout': return <PagePlaceholder pageName="Logout" />;
-            default: return <DashboardPage navigateTo={navigateTo} />;
-        }
+    
+    const handlers = {
+        handleAddContact, handleUpdateContact, handleDeleteContact, handleImportContacts,
+        handleAddGroup, handleDeleteGroup, handleUpdateGroup,
+        handleAddBlast, handleDeleteBlast,
     };
 
     return (
-        <div className="flex h-screen bg-gray-100 font-sans">
-            {isMobileSidebarOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden" onClick={() => setMobileSidebarOpen(false)}></div>
-            )}
-
-            <Sidebar 
-                activePage={currentView.page} 
-                navigateTo={navigateTo} 
-                isDesktopExpanded={isDesktopExpanded}
-                toggleDesktopSidebar={toggleDesktopSidebar}
-                isMobileOpen={isMobileSidebarOpen}
-                setMobileOpen={setMobileSidebarOpen}
+        <BrowserRouter>
+            <AppContent
+                contacts={contacts}
+                groups={groups}
+                blasts={blasts}
+                loadingContacts={loadingContacts}
+                errorContacts={errorContacts}
+                handlers={handlers}
             />
-            
-            <div className="flex-1 flex flex-col overflow-hidden">
-                <Header 
-                    onMenuClick={() => setMobileSidebarOpen(true)}
-                    title={getPageTitle(currentView.page)}
-                />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-4 sm:p-6 md:p-8">
-                    {/* [MODIFIKASI] Menambahkan penanganan Loading dan Error di sini.
-                        Ini akan menampilkan pesan yang sesuai saat data kontak sedang diambil atau jika terjadi error,
-                        sebelum merender halaman apa pun. Ini adalah UX yang lebih baik.
-                    */}
-                    {loadingContacts && currentView.page === 'contacts' ? (
-                        <p className="text-center text-gray-500">Memuat data kontak...</p>
-                    ) : errorContacts ? (
-                        <p className="text-center text-red-500 bg-red-100 p-4 rounded-lg">{errorContacts}</p>
-                    ) : (
-                        renderPage() // Hanya render halaman jika tidak ada loading atau error.
-                    )}
-                </main>
-            </div>
-        </div>
+        </BrowserRouter>
     );
 }
 

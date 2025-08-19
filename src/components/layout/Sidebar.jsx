@@ -1,56 +1,59 @@
+// src/components/layout/Sidebar.jsx
+
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Home, Send, Users, Group, MessageSquareText, Bell, Settings, LogOut, Menu, MessageSquareText as AppIcon } from 'lucide-react';
 
-// --- DATA NAVIGASI DIDEFINISIKAN DI SINI ---
-// Properti `children` digunakan untuk menandai halaman turunan.
-// Sidebar akan tetap aktif jika halaman yang aktif adalah salah satu dari `children`.
+// [PERUBAHAN] Menambahkan path turunan untuk AI Agents
 const mainMenuItems = [
-    { id: 'dashboard', label: 'Beranda', icon: Home },
-    { 
-        id: 'sender', 
-        label: 'Sender WhatsApp', 
+    { id: 'dashboard', label: 'Beranda', icon: Home, path: '/' },
+    {
+        id: 'sender',
+        label: 'Sender WhatsApp',
         icon: Send,
-        children: ['aiAgentsList', 'aiAgentCreate', 'aiAgentEdit'] 
+        path: '/sender',
+        // Menambahkan '/ai-agents' agar menu ini aktif di semua halaman AI Agent
+        childrenPaths: ['/ai-agents']
     },
-    { id: 'contacts', label: 'Daftar Kontak', icon: Users },
-    { 
-        id: 'groups', 
-        label: 'Daftar Grup', 
+    { id: 'contacts', label: 'Daftar Kontak', icon: Users, path: '/contacts' },
+    {
+        id: 'groups',
+        label: 'Daftar Grup',
         icon: Group,
-        children: ['createGroup', 'editGroup']
+        path: '/groups',
+        childrenPaths: ['/groups/create', '/groups/edit']
     },
-    { 
-        id: 'blasts', 
-        label: 'Blast', 
+    {
+        id: 'blasts',
+        label: 'Blast',
         icon: MessageSquareText,
-        children: ['createBlast', 'blastDetail']
+        path: '/blasts',
+        childrenPaths: ['/blasts/create']
     },
 ];
 
 const bottomMenuItems = [
-    { id: 'notifications', label: 'Notifikasi', icon: Bell },
-    { id: 'settings', label: 'Setting Profile', icon: Settings },
-    { id: 'logout', label: 'Logout', icon: LogOut },
+    { id: 'notifications', label: 'Notifikasi', icon: Bell, path: '/notifications' },
+    { id: 'settings', label: 'Setting Profile', icon: Settings, path: '/settings' },
+    { id: 'logout', label: 'Logout', icon: LogOut, path: '/logout' },
 ];
 
+const NavLink = ({ item, isDesktopExpanded, setMobileOpen }) => {
+    const location = useLocation();
+    const currentPath = location.pathname;
 
-// --- KOMPONEN-KOMPONEN INTERNAL ---
-const NavLink = ({ item, activePage, navigateTo, isDesktopExpanded, setMobileOpen }) => {
-    // Item dianggap aktif jika halaman saat ini adalah ID-nya
-    // atau jika halaman saat ini termasuk dalam daftar 'children'-nya.
-    const isActive = activePage === item.id || item.children?.includes(activePage);
-
-    const handleLinkClick = (e) => {
-        e.preventDefault();
-        navigateTo(item.id);
-        setMobileOpen(false); // Tutup sidebar mobile setelah klik
-    };
+    // Logika isActive akan otomatis menangani path turunan
+    // Contoh: jika currentPath adalah '/ai-agents/create', maka startsWith('/ai-agents') akan true.
+    const isActive = currentPath === item.path ||
+        (item.childrenPaths && item.childrenPaths.some(childPath => currentPath.startsWith(childPath)));
 
     return (
-        <a href="#" onClick={handleLinkClick}
+        <Link
+            to={item.path}
+            onClick={() => setMobileOpen(false)}
             className={`flex items-center py-3 rounded-lg transition-colors duration-200 ${
-                isActive 
-                ? 'bg-indigo-600 text-white shadow-md' 
+                isActive
+                ? 'bg-indigo-600 text-white shadow-md'
                 : 'text-gray-300 hover:bg-indigo-800 hover:text-white'
             } ${isDesktopExpanded ? 'px-4' : 'md:px-3 md:justify-center'}`}
         >
@@ -58,15 +61,12 @@ const NavLink = ({ item, activePage, navigateTo, isDesktopExpanded, setMobileOpe
             <span className={`transition-all duration-200 whitespace-nowrap ${isDesktopExpanded ? 'opacity-100' : 'md:opacity-0 md:w-0'}`}>
                 {item.label}
             </span>
-        </a>
+        </Link>
     );
 };
 
-// --- KOMPONEN UTAMA SIDEBAR ---
-const Sidebar = ({ 
-    activePage, 
-    navigateTo, 
-    isDesktopExpanded, 
+const Sidebar = ({
+    isDesktopExpanded,
     toggleDesktopSidebar,
     isMobileOpen,
     setMobileOpen
@@ -97,11 +97,11 @@ const Sidebar = ({
                 <p className={`pt-4 pb-2 text-xs text-gray-400 uppercase ${isDesktopExpanded ? 'px-4' : 'md:text-center md:text-[10px]'}`}>
                     {isDesktopExpanded ? 'Utama' : 'Menu'}
                 </p>
-                {mainMenuItems.map(item => <NavLink key={item.id} {...{ item, activePage, navigateTo, isDesktopExpanded, setMobileOpen }} />)}
+                {mainMenuItems.map(item => <NavLink key={item.id} {...{ item, isDesktopExpanded, setMobileOpen }} />)}
             </nav>
 
             <div className="p-4 border-t border-indigo-800 space-y-2 flex-shrink-0">
-                {bottomMenuItems.map(item => <NavLink key={item.id} {...{ item, activePage, navigateTo, isDesktopExpanded, setMobileOpen }} />)}
+                {bottomMenuItems.map(item => <NavLink key={item.id} {...{ item, isDesktopExpanded, setMobileOpen }} />)}
             </div>
         </div>
     );
