@@ -67,7 +67,7 @@ const ContactsPage = ({
         onDeleteContact(id); // Panggil fungsi dari props
     };
 
-  // Handler untuk Implementasi Import Excel Sebenarnya
+ // Handler untuk Implementasi Import Excel Sebenarnya
     const handleImportExcel = () => {
         if (!excelFile) {
             alert('Silakan pilih file Excel terlebih dahulu.');
