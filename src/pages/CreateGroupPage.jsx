@@ -1,20 +1,25 @@
+// src/pages/CreateGroupPage.jsx
+
 import React, { useState, useEffect } from 'react';
+// [BARU] Impor hook dan komponen dari react-router-dom
+import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Users, Plus } from 'lucide-react';
 import SearchableContactList from '../components/SearchableContactList';
 import AddContactModal from '../components/AddContactModal';
 
-// PERUBAHAN: Komponen tidak lagi menerima props 'contacts', 'handleAddGroup', 'handleAddContact'
-const CreateGroupPage = ({ navigateTo }) => {
+// [PERUBAHAN] Hapus prop navigateTo
+const CreateGroupPage = () => {
+    // [PERBAIKAN] Gunakan useNavigate untuk navigasi programatik
+    const navigate = useNavigate();
+
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [selectedMembers, setSelectedMembers] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     
-    // State baru untuk mengelola daftar kontak dari backend
     const [allContacts, setAllContacts] = useState([]);
     const [isLoadingContacts, setIsLoadingContacts] = useState(true);
 
-    // Fungsi untuk mengambil semua kontak dari backend
     const fetchContacts = async () => {
         try {
             setIsLoadingContacts(true);
@@ -29,7 +34,6 @@ const CreateGroupPage = ({ navigateTo }) => {
         }
     };
 
-    // Ambil data kontak saat halaman dimuat
     useEffect(() => {
         fetchContacts();
     }, []);
@@ -42,7 +46,6 @@ const CreateGroupPage = ({ navigateTo }) => {
         );
     };
 
-    // Fungsi untuk menyimpan kontak baru ke backend
     const handleSaveNewContact = async (newContactData) => {
         try {
             const response = await fetch('http://localhost:3000/api/contacts', {
@@ -52,9 +55,9 @@ const CreateGroupPage = ({ navigateTo }) => {
             });
             if (!response.ok) throw new Error('Gagal menyimpan kontak baru');
             
-            setIsModalOpen(false); // Tutup modal
+            setIsModalOpen(false);
             alert('Kontak baru berhasil ditambahkan!');
-            await fetchContacts(); // Ambil ulang daftar kontak untuk menampilkan yang baru
+            await fetchContacts();
         } catch (error) {
             alert(error.message);
         }
@@ -86,7 +89,8 @@ const CreateGroupPage = ({ navigateTo }) => {
             }
 
             alert('Grup berhasil disimpan!');
-            navigateTo('groups');
+            // [PERBAIKAN] Gunakan navigate untuk pindah halaman
+            navigate('/groups');
         } catch (err) {
             alert(err.message);
         }
@@ -96,14 +100,14 @@ const CreateGroupPage = ({ navigateTo }) => {
         <>
             <div>
                 <div className="flex items-center mb-6">
-                    <button onClick={() => navigateTo('groups')} className="p-2 rounded-full hover:bg-gray-200" aria-label="Kembali">
+                    {/* [PERBAIKAN] Gunakan Link untuk tombol kembali */}
+                    <Link to="/groups" className="p-2 rounded-full hover:bg-gray-200" aria-label="Kembali">
                         <ArrowLeft size={24} />
-                    </button>
+                    </Link>
                     <h2 className="text-3xl font-bold text-gray-800 ml-4">Buat Grup Baru</h2>
                 </div>
                 
                 <form onSubmit={handleSaveGroup} className="bg-white p-8 rounded-xl shadow-md space-y-6">
-                    {/* Input Nama dan Deskripsi */}
                     <div>
                         <label htmlFor="group-name" className="block text-sm font-medium text-gray-700 mb-1">Nama Grup</label>
                         <input type="text" id="group-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Contoh: UKM Basket" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" required />
@@ -113,7 +117,6 @@ const CreateGroupPage = ({ navigateTo }) => {
                         <textarea id="group-description" value={description} onChange={(e) => setDescription(e.target.value)} rows="3" placeholder="Contoh: Grup untuk koordinasi anggota UKM Basket." className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></textarea>
                     </div>
 
-                    {/* Pemilihan Anggota */}
                     <div>
                         <div className="flex justify-between items-center mb-2">
                             <label className="block text-sm font-medium text-gray-700">Pilih Anggota</label>
@@ -137,11 +140,11 @@ const CreateGroupPage = ({ navigateTo }) => {
                         </div>
                     </div>
 
-                    {/* Tombol Aksi */}
                     <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
-                        <button type="button" onClick={() => navigateTo('groups')} className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                        {/* [PERBAIKAN] Gunakan Link untuk tombol Batal */}
+                        <Link to="/groups" className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
                             Batal
-                        </button>
+                        </Link>
                         <button type="submit" className="px-6 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">
                             Simpan Grup
                         </button>

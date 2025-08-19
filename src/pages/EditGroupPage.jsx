@@ -1,30 +1,33 @@
+// src/pages/EditGroupPage.jsx
+
 import React, { useState, useEffect } from 'react';
+// [BARU] Impor hook dan komponen dari react-router-dom
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Users, Plus } from 'lucide-react';
 import SearchableContactList from '../components/SearchableContactList';
 import AddContactModal from '../components/AddContactModal';
 
-// PERUBAHAN: Komponen tidak lagi menerima props dari App.jsx
-const EditGroupPage = ({ navigateTo, params }) => {
-    const { groupId } = params;
+// [PERUBAHAN] Hapus props navigateTo dan params
+const EditGroupPage = () => {
+    // [PERBAIKAN] Gunakan hook dari react-router-dom
+    const { groupId } = useParams();
+    const navigate = useNavigate();
 
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [selectedMembers, setSelectedMembers] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     
-    // State untuk data dan loading
     const [allContacts, setAllContacts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // useEffect untuk mengambil data detail grup DAN semua kontak secara bersamaan
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setIsLoading(true);
                 setError(null);
 
-                // Mengambil data grup dan data kontak secara paralel
                 const [groupResponse, contactsResponse] = await Promise.all([
                     fetch(`http://localhost:3000/api/groups/${groupId}`),
                     fetch('http://localhost:3000/api/contacts')
@@ -36,23 +39,24 @@ const EditGroupPage = ({ navigateTo, params }) => {
                 const groupData = await groupResponse.json();
                 const contactsData = await contactsResponse.json();
 
-                // Mengisi form dengan data dari backend
                 setName(groupData.name);
                 setDescription(groupData.description);
-                setSelectedMembers(groupData.members); // Backend mengirim array ID anggota
+                // Pastikan members adalah array, jika tidak ada set ke array kosong
+                setSelectedMembers(groupData.members?.map(m => m.id) || []);
                 setAllContacts(contactsData);
 
             } catch (err) {
                 setError(err.message);
                 alert(err.message);
-                navigateTo('groups');
+                // [PERBAIKAN] Gunakan navigate untuk kembali jika error
+                navigate('/groups');
             } finally {
                 setIsLoading(false);
             }
         };
 
         fetchData();
-    }, [groupId, navigateTo]);
+    }, [groupId, navigate]); // Tambahkan navigate sebagai dependency
 
     const handleContactSelect = (contactId) => {
         setSelectedMembers(prev =>
@@ -62,7 +66,6 @@ const EditGroupPage = ({ navigateTo, params }) => {
         );
     };
 
-    // Fungsi untuk menyimpan kontak baru ke backend
     const handleSaveNewContact = async (newContactData) => {
         try {
             const response = await fetch('http://localhost:3000/api/contacts', {
@@ -75,14 +78,12 @@ const EditGroupPage = ({ navigateTo, params }) => {
             const newContact = await response.json();
             setIsModalOpen(false);
             alert('Kontak baru berhasil ditambahkan!');
-            // Ambil ulang daftar kontak untuk menampilkan yang baru
-            setAllContacts(prev => [...prev, newContact.data]);
+            setAllContacts(prev => [...prev, newContact]);
         } catch (error) {
             alert(error.message);
         }
     };
     
-    // Fungsi untuk menyimpan perubahan
     const handleSaveChanges = async (e) => {
         e.preventDefault();
         if (!name.trim()) {
@@ -102,7 +103,8 @@ const EditGroupPage = ({ navigateTo, params }) => {
             if (!response.ok) throw new Error('Gagal memperbarui grup');
 
             alert('Perubahan berhasil disimpan!');
-            navigateTo('groups');
+            // [PERBAIKAN] Gunakan navigate untuk pindah halaman
+            navigate('/groups');
         } catch (err) {
             alert(err.message);
         }
@@ -120,15 +122,15 @@ const EditGroupPage = ({ navigateTo, params }) => {
         <>
             <div>
                 <div className="flex items-center mb-6">
-                    <button onClick={() => navigateTo('groups')} className="p-2 rounded-full hover:bg-gray-200" aria-label="Kembali">
+                    {/* [PERBAIKAN] Gunakan Link untuk tombol kembali */}
+                    <Link to="/groups" className="p-2 rounded-full hover:bg-gray-200" aria-label="Kembali">
                         <ArrowLeft size={24} />
-                    </button>
+                    </Link>
                     <h2 className="text-3xl font-bold text-gray-800 ml-4">Kelola Grup</h2>
                 </div>
                 
                 <form onSubmit={handleSaveChanges} className="bg-white p-8 rounded-xl shadow-md space-y-6">
-                    {/* ... (bagian form lainnya sama persis) ... */}
-                     <div>
+                    <div>
                         <label htmlFor="group-name" className="block text-sm font-medium text-gray-700 mb-1">Nama Grup</label>
                         <input type="text" id="group-name" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" required />
                     </div>
@@ -157,9 +159,10 @@ const EditGroupPage = ({ navigateTo, params }) => {
                     </div>
 
                     <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
-                        <button type="button" onClick={() => navigateTo('groups')} className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                        {/* [PERBAIKAN] Gunakan Link untuk tombol Batal */}
+                        <Link to="/groups" className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
                             Batal
-                        </button>
+                        </Link>
                         <button type="submit" className="px-6 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">
                             Simpan Perubahan
                         </button>
